@@ -9,12 +9,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
-	// 開発用に .env を読み込む（無ければ環境変数をそのまま使う）
-	if err := godotenv.Load(); err != nil {
-		log.Println("no .env file found, using environment variables")
-	}
-
+// setupRouter は Gin のルーターを構築して返す。テストから再利用するために main から分離している。
+func setupRouter() (*gin.Engine, error) {
 	r := gin.Default()
 
 	// 信頼するプロキシを環境変数で設定（未設定なら nil = どのプロキシも信頼しない）
@@ -25,12 +21,26 @@ func main() {
 		trusted = strings.Split(v, ",")
 	}
 	if err := r.SetTrustedProxies(trusted); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	return r, nil
+}
+
+func main() {
+	// 開発用に .env を読み込む（無ければ環境変数をそのまま使う）
+	if err := godotenv.Load(); err != nil {
+		log.Println("no .env file found, using environment variables")
+	}
+
+	r, err := setupRouter()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
