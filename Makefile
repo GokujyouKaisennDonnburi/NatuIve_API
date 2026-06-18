@@ -1,6 +1,8 @@
 # NatuIve API 開発用タスク
 # 使い方: `make` または `make help` で一覧を表示
 
+# swag は go.mod の swaggo/swag と同じバージョンに固定する（生成物のブレを防ぐ）。
+SWAG_VERSION := v1.16.6
 SWAG ?= $(shell go env GOPATH)/bin/swag
 SWAG_ENTRY := cmd/api/main.go
 SWAG_OUT := ./docs
@@ -36,8 +38,8 @@ vet: ## go vet
 	go vet ./...
 
 .PHONY: swag-install
-swag-install: ## swag CLI をインストール
-	go install github.com/swaggo/swag/cmd/swag@latest
+swag-install: ## swag CLI をインストール (バージョン固定)
+	go install github.com/swaggo/swag/cmd/swag@$(SWAG_VERSION)
 
 .PHONY: swag
 swag: ## OpenAPI ドキュメントを生成 (docs/)
