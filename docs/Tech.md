@@ -1,35 +1,42 @@
 ## APIサーバー
 
+Go (Gin) 製。Web / モバイルから呼び出される API サーバー。
+
 ### 認証
 
-SpabaseAuth
+SupabaseAuth（Supabase が発行する JWT を JWKS で検証する想定。実装は今後）
 
 
 ## 開発者向け 環境構築
 
+開発・実行は **Docker 前提**。Docker さえあれば Go を直接インストールしなくても動かせる。
+
 ### 前提
-- Go 1.26.4 
-
-### セットアップ
-```bash
-# 依存をダウンロード・整理
-go mod tidy
-```
-
-依存ライブラリの一覧と用途は [dependencies.md](./dependencies.md) を参照。
+- Docker / Docker Compose
+- （Docker を使わずローカルで動かす場合のみ）Go 1.26.4 以上
 
 ### 環境変数
-開発時はリポジトリ直下に `.env` を置く（無ければ環境変数をそのまま使用）。
+リポジトリ直下に `.env` を置く（`.env.example` をコピーして作成）。
+
+```bash
+cp .env.example .env
+```
 
 | 変数 | 説明 | デフォルト |
 |---|---|---|
 | `PORT` | サーバの待ち受けポート | `8080` |
+| `TRUSTED_PROXIES` | 信頼するプロキシ（カンマ区切り CIDR/IP）。未設定なら全プロキシを信頼しない。本番でプロキシ越しに置く場合に設定 | （未設定） |
+
+依存ライブラリの一覧と用途は [dependencies.md](./dependencies.md) を参照。
+
 
 ## 動作確認
 
+### 開発（Docker Compose）
+ソースをマウントしてコンテナ内で `go run .` を実行する。
+
 ```bash
-# サーバ起動
-go run .
+docker compose up        # 起動（停止は Ctrl+C → docker compose down）
 ```
 
 別ターミナルでヘルスチェック:
@@ -38,7 +45,17 @@ curl http://localhost:8080/health
 # => {"status":"ok"}
 ```
 
-ビルドのみ確認する場合:
+### 本番イメージ（Docker）
+マルチステージビルドで軽量な distroless イメージを作る。
+
 ```bash
-go build ./...
+docker build -t natuive-api .
+docker run -p 8080:8080 --env-file .env natuive-api
+```
+
+### Docker を使わない場合（任意）
+```bash
+go mod tidy          # 依存の取得・整理
+go run .             # 起動
+go build ./...       # ビルド確認のみ
 ```
