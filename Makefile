@@ -5,7 +5,7 @@
 SWAG_VERSION := v1.16.6
 SWAG ?= $(shell go env GOPATH)/bin/swag
 SWAG_ENTRY := cmd/api/main.go
-SWAG_OUT := ./docs
+SWAG_OUT := ./api
 
 .DEFAULT_GOAL := help
 
