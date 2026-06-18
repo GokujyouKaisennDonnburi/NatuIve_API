@@ -56,6 +56,21 @@ docker run -p 8080:8080 --env-file .env natuive-api
 ### Docker を使わない場合（任意）
 ```bash
 go mod tidy          # 依存の取得・整理
-go run .             # 起動
+go run ./cmd/api     # 起動
 go build ./...       # ビルド確認のみ
+go test ./...        # テスト
+```
+
+## API ドキュメント（Swagger）
+
+ハンドラのアノテーションから OpenAPI を生成し、Swagger UI で確認できる。
+
+- UI: サーバ起動後に `http://localhost:8080/swagger/index.html`
+- 仕様の生成物: `docs/`（`docs.go` / `swagger.json` / `swagger.yaml`）はコミット対象
+
+アノテーション(ハンドラのコメントや `cmd/api/main.go` の `@title` 等)を変更したら再生成する:
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest   # 初回のみ
+swag init -g cmd/api/main.go -o ./docs --parseDependency --parseInternal
 ```
