@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -7,18 +7,20 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/GokujyouKaisennDonnburi/NatuIve_API/internal/config"
 )
 
 func TestMain(m *testing.M) {
-	// テスト中はログ出力を抑え、デバッグ出力を減らす
+	// テスト中はデバッグ出力を抑える。
 	gin.SetMode(gin.TestMode)
 	m.Run()
 }
 
 func TestHealthEndpoint(t *testing.T) {
-	r, err := setupRouter()
+	r, err := NewRouter(config.Config{})
 	if err != nil {
-		t.Fatalf("setupRouter() returned error: %v", err)
+		t.Fatalf("NewRouter() returned error: %v", err)
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
