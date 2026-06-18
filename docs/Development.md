@@ -13,8 +13,8 @@
 | `make test` | テスト実行 |
 | `make tidy` / `make fmt` / `make vet` | 依存整理 / 整形 / 静的解析 |
 | `make swag-install` | swag CLI を導入（バージョン固定） |
-| `make swag` | OpenAPI ドキュメント（`docs/`）を再生成 |
-| `make swag-check` | `docs/` が最新か検証（CI用。差分があれば失敗） |
+| `make swag` | OpenAPI ドキュメント（`api/`）を再生成 |
+| `make swag-check` | `api/` が最新か検証（CI用。差分があれば失敗） |
 | `make up` / `make down` | 開発用コンテナの起動 / 停止 |
 
 ## ディレクトリ構成と責務
@@ -29,8 +29,11 @@ internal/
   service/             ビジネスロジック（HTTP に依存しない）
   repository/          データアクセス。interface を定義し実装を分ける
   model/               ドメイン型・DTO
-docs/                  swag 生成物（docs.go / swagger.json|yaml）
+api/                   swag 生成物（docs.go / swagger.json|yaml）。手編集禁止
+docs/                  人間が書く Markdown（本ガイド・Tech.md など）
 ```
+
+> **生成物と手書きドキュメントは分ける**: `api/` は `make swag` が作る生成物（触らない）、`docs/` は人が書く Markdown。
 
 **依存方向は `handler → service → repository` の一方向**。逆流させない。
 `repository` は interface で定義し、`service` のテスト時にモックへ差し替えられるようにする。
@@ -109,32 +112,32 @@ UI: サーバ起動後に `http://localhost:8080/swagger/index.html`。
 
 ```
 [1. 生成] make swag (swag init)
-   Go のコメント ──静的解析(AST)──> docs/docs.go・swagger.json・swagger.yaml
+   Go のコメント ──静的解析(AST)──> api/docs.go・swagger.json・swagger.yaml
 
 [2. 配信] サーバ起動時
-   docs を blank import ──init() で登録──> gin-swagger が /swagger で配信
+   api を blank import ──init() で登録──> gin-swagger が /swagger で配信
 ```
 
-1. **生成**: `make swag`（= `swag init`）が**サーバを起動せず、ソースのコメントを解析**して `docs/` を作る。
+1. **生成**: `make swag`（= `swag init`）が**サーバを起動せず、ソースのコメントを解析**して `api/` を作る。
    - `cmd/api/main.go` の `@title` `@version` `@BasePath` … 全体情報
    - 各ハンドラの `@Summary` `@Tags` `@Success` `@Router` … 各エンドポイント
    - `--parseInternal` / `--parseDependency` で `internal/` と依存先の型も解析する。
-2. **配信**: `internal/server/router.go` が `_ "…/docs"` を **blank import** → `docs.go` の `init()` が spec を登録 → `gin-swagger` が `/swagger/*` で UI と `doc.json` を返す。
+2. **配信**: `internal/server/router.go` が `_ "…/api"` を **blank import** → `docs.go` の `init()` が spec を登録 → `gin-swagger` が `/swagger/*` で UI と `doc.json` を返す。
 
 > **重要: swag は Gin のルート（`r.GET(...)`）を見ない。** `@Router /health [get]` という**コメントの文字列だけ**で spec を作る。
 > そのため実ルートと `@Router` がズレるとドキュメントと実装が食い違うので、両方を一致させること。
 
 ### 自動生成ではない（手動 → コミット）
 
-コメントを変えただけでは反映されない。**自分で `make swag` を実行して `docs/` を作り直し、コミットする。**
+コメントを変えただけでは反映されない。**自分で `make swag` を実行して `api/` を作り直し、コミットする。**
 
 ```bash
 # ハンドラの @Summary 等を編集したら
 make swag
-git add docs/ && git commit -m "docs: swagger 再生成 #1"
+git add api/ && git commit -m "docs: swagger 再生成 #1"
 ```
 
-- `docs/` はリポジトリにコミットする運用（ビルドや起動時には生成せず、コミット済みの `docs/` を読む）。
+- `api/` はリポジトリにコミットする運用（ビルドや起動時には生成せず、コミット済みの `api/` を読む）。
 - swag のバージョンは `Makefile` の `SWAG_VERSION` で固定（go.mod の `swaggo/swag` と一致させ、版違いの差分を防ぐ）。
 
 ### 最新かは CI でチェックされる
@@ -142,8 +145,8 @@ git add docs/ && git commit -m "docs: swagger 再生成 #1"
 `make swag-check` が **再生成して差分が出たら失敗**する。再生成漏れを自動で検知する仕組み。
 
 ```make
-swag-check: swag                  # ① docs/ を再生成
-	git diff --exit-code ./docs   # ② 差分があれば exit 1（＝失敗）
+swag-check: swag                 # ① api/ を再生成
+	git diff --exit-code ./api   # ② 差分があれば exit 1（＝失敗）
 ```
 
 - 一致していれば差分ゼロで成功。再生成し忘れていれば差分が出て失敗する。

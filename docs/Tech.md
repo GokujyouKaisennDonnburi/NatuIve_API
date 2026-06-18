@@ -66,11 +66,11 @@ go test ./...        # テスト
 ハンドラのアノテーションから OpenAPI を生成し、Swagger UI で確認できる。
 
 - UI: サーバ起動後に `http://localhost:8080/swagger/index.html`
-- 仕様の生成物: `docs/`（`docs.go` / `swagger.json` / `swagger.yaml`）はコミット対象
+- 仕様の生成物: `api/`（`docs.go` / `swagger.json` / `swagger.yaml`）はコミット対象（手編集禁止）
 
 アノテーション(ハンドラのコメントや `cmd/api/main.go` の `@title` 等)を変更したら再生成する:
 
 ```bash
-go install github.com/swaggo/swag/cmd/swag@latest   # 初回のみ
-swag init -g cmd/api/main.go -o ./docs --parseDependency --parseInternal
+make swag-install   # 初回のみ（swag CLI をバージョン固定で導入）
+make swag           # api/ を再生成
 ```
