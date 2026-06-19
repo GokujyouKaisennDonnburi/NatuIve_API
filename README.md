@@ -12,8 +12,8 @@
 
 ```bash
 cp .env.example .env
-make run          # ローカル起動（または docker compose は make up）
-make help         # タスク一覧
+make up      # 開発サーバ起動（Docker + Air ホットリロード。停止は Ctrl+C → make down）
+make help    # その他のタスク一覧（lint / test / swag など）
 ```
 
 API ドキュメント（Swagger UI）: 起動後 `http://localhost:8080/swagger/index.html`
