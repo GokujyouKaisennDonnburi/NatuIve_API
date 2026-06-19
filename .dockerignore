@@ -1,0 +1,13 @@
+# VCS
+.git
+.gitignore
+
+# 秘密情報（イメージに焼き込まない）
+.env
+
+# ドキュメント・コンテナ定義（ビルドに不要）
+*.md
+docs
+Dockerfile
+docker-compose.yml
+.dockerignore
