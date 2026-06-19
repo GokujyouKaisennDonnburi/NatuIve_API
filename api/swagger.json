@@ -22,12 +22,21 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.HealthResponse"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "Status はサーバの稼働状態。正常時は \"ok\"。",
+                    "type": "string",
+                    "example": "ok"
                 }
             }
         }

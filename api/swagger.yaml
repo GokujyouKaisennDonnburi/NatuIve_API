@@ -1,4 +1,12 @@
 basePath: /
+definitions:
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.HealthResponse:
+    properties:
+      status:
+        description: Status はサーバの稼働状態。正常時は "ok"。
+        example: ok
+        type: string
+    type: object
 info:
   contact: {}
   description: NatuIve のバックエンド API
@@ -14,9 +22,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.HealthResponse'
       summary: ヘルスチェック
       tags:
       - system

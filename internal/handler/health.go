@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/GokujyouKaisennDonnburi/NatuIve_API/internal/model"
 )
 
 // HealthHandler はヘルスチェック系のエンドポイントを担当する。
@@ -21,8 +23,8 @@ func NewHealthHandler() *HealthHandler {
 //	@Description	サーバーが正常に稼働しているか確認する
 //	@Tags			system
 //	@Produce		json
-//	@Success		200	{object}	map[string]string
+//	@Success		200	{object}	model.HealthResponse
 //	@Router			/health [get]
 func (h *HealthHandler) Check(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	c.JSON(http.StatusOK, model.HealthResponse{Status: "ok"})
 }
