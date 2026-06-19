@@ -1,3 +1,4 @@
+// Package handler は HTTP ハンドラ（入出力の変換）を実装する。ロジックは持たない。
 package handler
 
 import (

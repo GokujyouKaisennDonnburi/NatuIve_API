@@ -1,3 +1,4 @@
+// Package server は Gin ルーターの構築とルート定義を担う。
 package server
 
 import (
