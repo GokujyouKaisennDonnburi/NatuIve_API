@@ -54,12 +54,12 @@ swag-install: ## swag CLI をインストール (バージョン固定)
 	go install github.com/swaggo/swag/cmd/swag@$(SWAG_VERSION)
 
 .PHONY: swag
-swag: ## OpenAPI ドキュメントを生成 (docs/)
+swag: ## OpenAPI ドキュメントを生成 (api/)
 	$(SWAG) init -g $(SWAG_ENTRY) -o $(SWAG_OUT) --parseDependency --parseInternal
 
 .PHONY: swag-check
-swag-check: swag ## docs/ が最新か確認 (CI 用: 差分があれば失敗)
-	@git diff --exit-code $(SWAG_OUT) || (echo "docs/ が古いです。'make swag' を実行してコミットしてください" && exit 1)
+swag-check: swag ## api/ が最新か確認 (CI 用: 差分があれば失敗)
+	@git diff --exit-code $(SWAG_OUT) || (echo "api/ が古いです。'make swag' を実行してコミットしてください" && exit 1)
 
 .PHONY: up
 up: ## 開発用コンテナを起動 (docker compose)
