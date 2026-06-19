@@ -6,9 +6,12 @@
 
 `make` または `make help` でタスク一覧が出る。
 
+docker コマンドは基本使わない。make経由で使用する。
+
 | コマンド | 用途 |
 |---|---|
-| `make run` | ローカルでサーバ起動（`go run ./cmd/api`） |
+| `make up` | docker compose up 開発用コンテナの起動 |
+| `make down` | docker compose down 開発用コンテナの停止 |
 | `make build` | ビルド確認 |
 | `make test` | テスト実行 |
 | `make tidy` / `make fmt` / `make vet` | 依存整理 / 整形 / 静的解析 |
@@ -17,7 +20,7 @@
 | `make swag-install` | swag CLI を導入（バージョン固定） |
 | `make swag` | OpenAPI ドキュメント（`api/`）を再生成 |
 | `make swag-check` | `api/` が最新か検証（CI用。差分があれば失敗） |
-| `make up` / `make down` | 開発用コンテナの起動 / 停止 |
+| `make run` | 基本使わない。ローカルでサーバ起動（`go run ./cmd/api`） |
 
 ## ディレクトリ構成と責務
 

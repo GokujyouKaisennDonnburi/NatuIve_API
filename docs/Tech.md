@@ -37,7 +37,7 @@ cp .env.example .env
 **ソースを編集すると自動で再ビルド・再起動される（ホットリロード）。** 設定は `.air.toml`。
 
 ```bash
-docker compose up        # 起動（停止は Ctrl+C → docker compose down）
+make up        # 起動（中身は docker compose up。停止は Ctrl+C → make down）
 ```
 
 > 初回起動時は Air の導入（バージョン固定）とビルドで少し時間がかかる。
