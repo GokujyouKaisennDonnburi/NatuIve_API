@@ -11,11 +11,30 @@ SWAG_OUT := ./api
 GOLANGCI_VERSION := v2.12.2
 GOLANGCI ?= $(shell go env GOPATH)/bin/golangci-lint
 
+# goose(マイグレーション CLI)もバージョンを固定する。
+GOOSE_VERSION := v3.27.1
+GOOSE ?= $(shell go env GOPATH)/bin/goose
+MIGRATIONS_DIR := db/migrations
+
+# ローカル開発では .env を読み込み、DATABASE_URL などを Make の変数として取り込む。
+# (CI など .env が無い環境では、シェルの環境変数がそのまま使われる)
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
 help: ## このヘルプを表示
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: setup
+setup: ## 初期セットアップ (.env 作成・依存取得・CLI 一括導入)
+	@test -f .env || (cp .env.example .env && echo ".env を .env.example から作成しました")
+	go mod download
+	$(MAKE) swag-install lint-install migrate-install
+	@echo "セットアップ完了。'make up' で開発用コンテナを起動できます"
 
 .PHONY: run
 run: ## ローカルでサーバを起動 (go run)
@@ -60,6 +79,27 @@ swag: ## OpenAPI ドキュメントを生成 (api/)
 .PHONY: swag-check
 swag-check: swag ## api/ が最新か確認 (CI 用: 差分があれば失敗)
 	@git diff --exit-code $(SWAG_OUT) || (echo "api/ が古いです。'make swag' を実行してコミットしてください" && exit 1)
+
+.PHONY: migrate-install
+migrate-install: ## goose CLI をインストール (バージョン固定)
+	go install github.com/pressly/goose/v3/cmd/goose@$(GOOSE_VERSION)
+
+.PHONY: migrate-create
+migrate-create: ## マイグレーション雛形を作成 (例: make migrate-create name=create_xxx)
+	@test -n "$(name)" || (echo "name を指定してください: make migrate-create name=create_xxx" && exit 1)
+	$(GOOSE) -dir $(MIGRATIONS_DIR) create $(name) sql
+
+.PHONY: migrate-up
+migrate-up: ## マイグレーションを最新まで適用
+	$(GOOSE) -dir $(MIGRATIONS_DIR) postgres "$(DATABASE_URL)" up
+
+.PHONY: migrate-down
+migrate-down: ## マイグレーションを1つ戻す
+	$(GOOSE) -dir $(MIGRATIONS_DIR) postgres "$(DATABASE_URL)" down
+
+.PHONY: migrate-status
+migrate-status: ## マイグレーション適用状況を表示
+	$(GOOSE) -dir $(MIGRATIONS_DIR) postgres "$(DATABASE_URL)" status
 
 .PHONY: up
 up: ## 開発用コンテナを起動 (docker compose)
