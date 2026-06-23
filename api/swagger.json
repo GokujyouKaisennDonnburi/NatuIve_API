@@ -10,7 +10,7 @@
     "paths": {
         "/api/v1/events": {
             "get": {
-                "description": "公開イベントを作成日時の降順で返す。認証不要。",
+                "description": "公開イベントを指定ソート順で返す。認証不要。\nsort は \"created_at\"(デフォルト) / \"event_date\" のみ許可。不正値はデフォルトに戻す。\norder は \"desc\"(デフォルト) / \"asc\" のみ許可。不正値はデフォルトに戻す。",
                 "produces": [
                     "application/json"
                 ],
@@ -19,6 +19,18 @@
                 ],
                 "summary": "イベント一覧取得",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ソートカラム(created_at|event_date, default: created_at)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ソート順(asc|desc, default: desc)",
+                        "name": "order",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "description": "取得件数(default 20, 最大 100)",
@@ -36,10 +48,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary"
-                            }
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventListResponse"
                         }
                     },
                     "500": {
@@ -130,6 +139,33 @@
             "properties": {
                 "error": {
                     "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventListResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "description": "Events はイベントサマリーの一覧。",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary"
+                    }
+                },
+                "limit": {
+                    "description": "Limit は正規化後の実際に使われた取得件数。",
+                    "type": "integer",
+                    "example": 20
+                },
+                "offset": {
+                    "description": "Offset は正規化後の実際に使われた取得開始位置。",
+                    "type": "integer",
+                    "example": 0
+                },
+                "totalCount": {
+                    "description": "TotalCount はフィルタなし全件数。クライアントが最終ページ offset を算出するために使う。",
+                    "type": "integer",
+                    "example": 153
                 }
             }
         },
