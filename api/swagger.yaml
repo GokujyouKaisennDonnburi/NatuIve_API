@@ -16,6 +16,26 @@ definitions:
       error:
         $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody'
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventListResponse:
+    properties:
+      events:
+        description: Events はイベントサマリーの一覧。
+        items:
+          $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary'
+        type: array
+      limit:
+        description: Limit は正規化後の実際に使われた取得件数。
+        example: 20
+        type: integer
+      offset:
+        description: Offset は正規化後の実際に使われた取得開始位置。
+        example: 0
+        type: integer
+      totalCount:
+        description: TotalCount はフィルタなし全件数。クライアントが最終ページ offset を算出するために使う。
+        example: 153
+        type: integer
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary:
     properties:
       createdAt:
@@ -85,8 +105,19 @@ info:
 paths:
   /api/v1/events:
     get:
-      description: 公開イベントを作成日時の降順で返す。認証不要。
+      description: |-
+        公開イベントを指定ソート順で返す。認証不要。
+        sort は "created_at"(デフォルト) / "event_date" のみ許可。不正値はデフォルトに戻す。
+        order は "desc"(デフォルト) / "asc" のみ許可。不正値はデフォルトに戻す。
       parameters:
+      - description: 'ソートカラム(created_at|event_date, default: created_at)'
+        in: query
+        name: sort
+        type: string
+      - description: 'ソート順(asc|desc, default: desc)'
+        in: query
+        name: order
+        type: string
       - description: 取得件数(default 20, 最大 100)
         in: query
         name: limit
@@ -101,9 +132,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary'
-            type: array
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventListResponse'
         "500":
           description: Internal Server Error
           schema:
