@@ -15,6 +15,49 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/events": {
+            "get": {
+                "description": "公開イベントを作成日時の降順で返す。認証不要。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "event"
+                ],
+                "summary": "イベント一覧取得",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "取得件数(default 20, 最大 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "取得開始位置(default 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me": {
             "get": {
                 "security": [
@@ -80,12 +123,12 @@ const docTemplate = `{
                 "code": {
                     "description": "Code は機械可読なエラーコード。",
                     "type": "string",
-                    "example": "unauthorized"
+                    "example": "internal_error"
                 },
                 "message": {
                     "description": "Message は人間向けのエラーメッセージ。",
                     "type": "string",
-                    "example": "認証が必要です"
+                    "example": "サーバー内部でエラーが発生しました"
                 }
             }
         },
@@ -94,6 +137,41 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt はレコード作成日時(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-06-22T12:00:00Z"
+                },
+                "eventDate": {
+                    "description": "EventDate はイベント開催日時(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-07-01T10:00:00Z"
+                },
+                "id": {
+                    "description": "ID はイベントの一意識別子(UUID)。",
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                },
+                "location": {
+                    "description": "Location は開催場所（文字列）。",
+                    "type": "string",
+                    "example": "東京都新宿御苑"
+                },
+                "profileId": {
+                    "description": "ProfileID は投稿者のプロフィール ID(UUID)。",
+                    "type": "string",
+                    "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                },
+                "title": {
+                    "description": "Title はイベントタイトル。",
+                    "type": "string",
+                    "example": "サクラ観察会"
                 }
             }
         },

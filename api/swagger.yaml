@@ -4,17 +4,44 @@ definitions:
     properties:
       code:
         description: Code は機械可読なエラーコード。
-        example: unauthorized
+        example: internal_error
         type: string
       message:
         description: Message は人間向けのエラーメッセージ。
-        example: 認証が必要です
+        example: サーバー内部でエラーが発生しました
         type: string
     type: object
   github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse:
     properties:
       error:
         $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody'
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary:
+    properties:
+      createdAt:
+        description: CreatedAt はレコード作成日時(RFC3339)。
+        example: "2026-06-22T12:00:00Z"
+        type: string
+      eventDate:
+        description: EventDate はイベント開催日時(RFC3339)。
+        example: "2026-07-01T10:00:00Z"
+        type: string
+      id:
+        description: ID はイベントの一意識別子(UUID)。
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        type: string
+      location:
+        description: Location は開催場所（文字列）。
+        example: 東京都新宿御苑
+        type: string
+      profileId:
+        description: ProfileID は投稿者のプロフィール ID(UUID)。
+        example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        type: string
+      title:
+        description: Title はイベントタイトル。
+        example: サクラ観察会
+        type: string
     type: object
   github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.HealthResponse:
     properties:
@@ -56,6 +83,34 @@ info:
   title: NatuIve API
   version: "1.0"
 paths:
+  /api/v1/events:
+    get:
+      description: 公開イベントを作成日時の降順で返す。認証不要。
+      parameters:
+      - description: 取得件数(default 20, 最大 100)
+        in: query
+        name: limit
+        type: integer
+      - description: 取得開始位置(default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventSummary'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+      summary: イベント一覧取得
+      tags:
+      - event
   /api/v1/me:
     get:
       description: 認証済みユーザー自身のプロフィールを返す(初回アクセス時に自動作成)

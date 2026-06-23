@@ -28,6 +28,13 @@ docker compose up -d             # DB 起動
 docker compose down              # DB 停止
 ```
 
+### Make ターゲットを優先する
+`Makefile` にターゲットがある作業は、素のコマンドを直接叩かず必ず `make <target>` を使う。
+ツール版数の固定や生成オプションが Makefile に集約されており、直接実行するとバージョンずれで
+生成物がブレ、CI（`make swag-check` 等）で落ちる。
+- OpenAPI ドキュメント生成: `swag init` ではなく `make swag`
+- 何か作業する前に `make help` で利用可能なターゲットを確認する
+
 ## Architecture Rules
 
 ### CRITICAL: 座標情報の保護

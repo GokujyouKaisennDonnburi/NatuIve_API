@@ -46,8 +46,21 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	health := handler.NewHealthHandler()
 	r.GET("/health", health.Check)
 
-	// DB と JWKS が揃っているときのみ認証付きの user 系ルートを有効にする。
-	if sqlDB == nil || cfg.SupabaseJWKSURL == "" {
+	// DB が無ければ DB 依存のルートは何も登録しない。
+	if sqlDB == nil {
+		return nil
+	}
+
+	// events 一覧は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
+	eventRepo := repository.NewEventRepository(sqlDB)
+	eventSvc := service.NewEventQueryService(eventRepo)
+	eventHandler := handler.NewEventHandler(eventSvc)
+
+	v1Public := r.Group("/api/v1")
+	v1Public.GET("/events", eventHandler.List)
+
+	// user 系は認証が必要。DB と JWKS の両方が揃っているときのみ登録する。
+	if cfg.SupabaseJWKSURL == "" {
 		return nil
 	}
 
