@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE events (
-    uuid UUID PRIMARY KEY,
+    id UUID PRIMARY KEY,
     profile_id UUID REFERENCES profiles(id),
     title VARCHAR(255) NOT NULL,
     description TEXT,
