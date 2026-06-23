@@ -61,7 +61,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse"
                         }
                     }
                 }
@@ -104,19 +104,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse"
                         }
                     }
                 }
@@ -147,13 +147,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse"
                         }
                     }
                 }
@@ -260,29 +260,6 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "Code は機械可読なエラーコード。",
-                    "type": "string",
-                    "example": "internal_error"
-                },
-                "message": {
-                    "description": "Message は人間向けのエラーメッセージ。",
-                    "type": "string",
-                    "example": "サーバー内部でエラーが発生しました"
-                }
-            }
-        },
-        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody"
-                }
-            }
-        },
         "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventCostInput": {
             "type": "object",
             "properties": {
@@ -381,6 +358,29 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Code は機械可読なエラーコード。",
+                    "type": "string",
+                    "example": "internal_error"
+                },
+                "message": {
+                    "description": "Message は人間向けのエラーメッセージ。",
+                    "type": "string",
+                    "example": "サーバー内部でエラーが発生しました"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorBody"
+                }
+            }
+        },
         "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ProfileResponse": {
             "type": "object",
             "properties": {
@@ -413,6 +413,52 @@ const docTemplate = `{
                     "description": "UpdatedAt はプロフィール更新日時(RFC3339)。",
                     "type": "string",
                     "example": "2026-06-22T12:00:00Z"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Code は機械可読なエラーコード。",
+                    "type": "string",
+                    "example": "unauthorized"
+                },
+                "message": {
+                    "description": "Message は人間向けのエラーメッセージ。",
+                    "type": "string",
+                    "example": "認証が必要です"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorBody"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Code は機械可読なエラーコード。",
+                    "type": "string",
+                    "example": "invalid_request"
+                },
+                "message": {
+                    "description": "Message は人間向けのエラーメッセージ。",
+                    "type": "string",
+                    "example": "タイトルは必須です"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorBody"
                 }
             }
         }

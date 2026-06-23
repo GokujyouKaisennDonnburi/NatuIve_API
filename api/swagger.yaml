@@ -59,22 +59,6 @@ definitions:
         example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         type: string
     type: object
-  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody:
-    properties:
-      code:
-        description: Code は機械可読なエラーコード。
-        example: internal_error
-        type: string
-      message:
-        description: Message は人間向けのエラーメッセージ。
-        example: サーバー内部でエラーが発生しました
-        type: string
-    type: object
-  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse:
-    properties:
-      error:
-        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorBody'
-    type: object
   github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.EventCostInput:
     properties:
       category:
@@ -147,6 +131,22 @@ definitions:
         example: ok
         type: string
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorBody:
+    properties:
+      code:
+        description: Code は機械可読なエラーコード。
+        example: internal_error
+        type: string
+      message:
+        description: Message は人間向けのエラーメッセージ。
+        example: サーバー内部でエラーが発生しました
+        type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorBody'
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ProfileResponse:
     properties:
       avatarUrl:
@@ -173,6 +173,38 @@ definitions:
         description: UpdatedAt はプロフィール更新日時(RFC3339)。
         example: "2026-06-22T12:00:00Z"
         type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorBody:
+    properties:
+      code:
+        description: Code は機械可読なエラーコード。
+        example: unauthorized
+        type: string
+      message:
+        description: Message は人間向けのエラーメッセージ。
+        example: 認証が必要です
+        type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorBody'
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorBody:
+    properties:
+      code:
+        description: Code は機械可読なエラーコード。
+        example: invalid_request
+        type: string
+      message:
+        description: Message は人間向けのエラーメッセージ。
+        example: タイトルは必須です
+        type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorBody'
     type: object
 info:
   contact: {}
@@ -213,7 +245,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse'
       summary: イベント一覧取得
       tags:
       - event
@@ -238,15 +270,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse'
       security:
       - BearerAuth: []
       summary: イベント投稿
@@ -265,11 +297,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ErrorResponse'
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse'
       security:
       - BearerAuth: []
       summary: 本人プロフィール取得

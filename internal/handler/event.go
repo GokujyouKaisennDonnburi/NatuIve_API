@@ -41,7 +41,7 @@ func NewEventHandler(querySvc *service.EventQueryService, cmdSvc *service.EventC
 //	@Param			limit	query		int		false	"取得件数(default 20, 最大 100)"
 //	@Param			offset	query		int		false	"取得開始位置(default 0)"
 //	@Success		200		{object}	model.EventListResponse
-//	@Failure		500		{object}	model.ErrorResponse
+//	@Failure		500		{object}	model.InternalErrorResponse
 //	@Router			/api/v1/events [get]
 func (h *EventHandler) List(c *gin.Context) {
 	// クエリパラメータを取得する（不正値は service 層で安全側に丸める）。
@@ -69,9 +69,9 @@ func (h *EventHandler) List(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Param			body	body		model.CreateEventRequest	true	"イベント投稿リクエスト"
 //	@Success		201		{object}	model.CreateEventResponse
-//	@Failure		400		{object}	model.ErrorResponse
-//	@Failure		401		{object}	model.ErrorResponse
-//	@Failure		500		{object}	model.ErrorResponse
+//	@Failure		400		{object}	model.ValidationErrorResponse
+//	@Failure		401		{object}	model.UnauthorizedErrorResponse
+//	@Failure		500		{object}	model.InternalErrorResponse
 //	@Router			/api/v1/events [post]
 func (h *EventHandler) Create(c *gin.Context) {
 	authUser, ok := middleware.AuthFromContext(c)
