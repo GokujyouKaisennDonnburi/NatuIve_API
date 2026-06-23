@@ -38,7 +38,7 @@ func (r *eventPostgres) ListSummaries(ctx context.Context, limit, offset int) ([
 	if err != nil {
 		return nil, fmt.Errorf("list event summaries: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var summaries []model.EventSummary
 	for rows.Next() {
