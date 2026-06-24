@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -79,7 +82,9 @@ func TestEventCommandServiceCreate_Validation(t *testing.T) {
 			},
 		},
 		{
-			name: "正常: 任意フィールドあり（Capacity・ExternalURL・Items・画像・PDF）",
+			// 画像・PDF キーは昇格フロー（promoteObjects）で変換されるため、
+			// この正常系テスト（store=nil）ではキーなしで Capacity/ExternalURL/Items の変換のみ確認する。
+			name: "正常: 任意フィールドあり（Capacity・ExternalURL・Items）",
 			req: func() model.CreateEventRequest {
 				r := validRequest()
 				r.Capacity = 30
@@ -87,8 +92,6 @@ func TestEventCommandServiceCreate_Validation(t *testing.T) {
 				r.Items = []model.EventItemInput{
 					{Item: "双眼鏡", IsRequired: true},
 				}
-				r.ImageObjectKeys = []string{"images/photo1.jpg"}
-				r.PdfObjectKeys = []string{"pdfs/doc1.pdf"}
 				return r
 			}(),
 			checkNewEvent: func(t *testing.T, e *model.NewEvent) {
@@ -101,12 +104,6 @@ func TestEventCommandServiceCreate_Validation(t *testing.T) {
 				}
 				if len(e.Items) != 1 || e.Items[0].Item != "双眼鏡" {
 					t.Errorf("Items: got %v", e.Items)
-				}
-				if len(e.ImageObjectKeys) != 1 {
-					t.Errorf("ImageObjectKeys: got %v", e.ImageObjectKeys)
-				}
-				if len(e.PdfObjectKeys) != 1 {
-					t.Errorf("PdfObjectKeys: got %v", e.PdfObjectKeys)
 				}
 			},
 		},
@@ -340,7 +337,7 @@ func TestEventCommandServiceCreate_Validation(t *testing.T) {
 				createResult: dummyResp,
 				createErr:    tt.stubErr,
 			}
-			svc := NewEventCommandService(stub)
+			svc := NewEventCommandService(stub, nil)
 
 			got, err := svc.Create(context.Background(), profileID, tt.req)
 
@@ -368,4 +365,221 @@ func TestEventCommandServiceCreate_Validation(t *testing.T) {
 			}
 		})
 	}
+}
+
+// --- 昇格フロー（promoteObjects）テスト ---
+
+const testProfileID = "profile-uuid-001"
+
+// loadTestdata はテストデータファイルを読み込む。
+func loadTestdata(t *testing.T, filename string) []byte {
+	t.Helper()
+	// filepath.Join を使い testdata/ 配下のみ参照することを保証する。
+	p := filepath.Join("testdata", filepath.Base(filename))
+	data, err := os.ReadFile(p) //nolint:gosec
+	if err != nil {
+		t.Fatalf("testdata/%s の読み込みに失敗: %v", filename, err)
+	}
+	return data
+}
+
+func TestEventCommandServiceCreate_OwnershipCheck(t *testing.T) {
+	dummyResp := model.CreateEventResponse{ID: "event-001", CreatedAt: time.Now().UTC()}
+	jpegData := loadTestdata(t, "sample.jpg")
+
+	tests := []struct {
+		name           string
+		imageObjectKey string
+		wantValErr     bool
+	}{
+		{
+			name:           "正常: 自分の tmp prefix に属するキー",
+			imageObjectKey: "natueve/tmp/" + testProfileID + "/uuid.jpg",
+		},
+		{
+			name:           "異常: 他人の tmp prefix",
+			imageObjectKey: "natueve/tmp/other-user-id/uuid.jpg",
+			wantValErr:     true,
+		},
+		{
+			name:           "異常: events/ に直接参照",
+			imageObjectKey: "natueve/events/images/uuid.jpg",
+			wantValErr:     true,
+		},
+		{
+			name:           "異常: prefix なし（キーのみ）",
+			imageObjectKey: "uuid.jpg",
+			wantValErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := &fakeObjectStore{
+				headSize:        int64(len(jpegData)),
+				headContentType: "image/jpeg",
+				getData:         jpegData,
+			}
+			repoStub := &stubEventRepository{
+				createResult: dummyResp,
+			}
+			svc := NewEventCommandService(repoStub, store)
+
+			req := validRequest()
+			req.ImageObjectKeys = []string{tt.imageObjectKey}
+
+			_, err := svc.Create(context.Background(), testProfileID, req)
+			if tt.wantValErr {
+				_ = assertValidationError(t, err)
+				return
+			}
+			assertNoErr(t, err)
+		})
+	}
+}
+
+func TestEventCommandServiceCreate_SizeLimit(t *testing.T) {
+	dummyResp := model.CreateEventResponse{ID: "event-001", CreatedAt: time.Now().UTC()}
+	validKey := "natueve/tmp/" + testProfileID + "/uuid.jpg"
+	jpegData := loadTestdata(t, "sample.jpg")
+
+	tests := []struct {
+		name        string
+		headSize    int64
+		contentType string
+		wantValErr  bool
+	}{
+		{
+			name:        "正常: 画像 10MB 以内",
+			headSize:    10 * 1024 * 1024,
+			contentType: "image/jpeg",
+		},
+		{
+			name:        "異常: 画像 10MB 超過",
+			headSize:    10*1024*1024 + 1,
+			contentType: "image/jpeg",
+			wantValErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := &fakeObjectStore{
+				headSize:        tt.headSize,
+				headContentType: tt.contentType,
+				getData:         jpegData,
+			}
+			repoStub := &stubEventRepository{createResult: dummyResp}
+			svc := NewEventCommandService(repoStub, store)
+
+			req := validRequest()
+			req.ImageObjectKeys = []string{validKey}
+
+			_, err := svc.Create(context.Background(), testProfileID, req)
+			if tt.wantValErr {
+				_ = assertValidationError(t, err)
+				return
+			}
+			assertNoErr(t, err)
+		})
+	}
+}
+
+func TestEventCommandServiceCreate_MagicNumberMismatch(t *testing.T) {
+	dummyResp := model.CreateEventResponse{ID: "event-001", CreatedAt: time.Now().UTC()}
+	validKey := "natueve/tmp/" + testProfileID + "/uuid.jpg"
+
+	// PNG データを JPEG として宣言（マジックナンバー不一致）
+	pngData := loadTestdata(t, "sample.png")
+
+	store := &fakeObjectStore{
+		headSize:        int64(len(pngData)),
+		headContentType: "image/jpeg", // 宣言は JPEG だが実体は PNG
+		getData:         pngData,
+	}
+	repoStub := &stubEventRepository{createResult: dummyResp}
+	svc := NewEventCommandService(repoStub, store)
+
+	req := validRequest()
+	req.ImageObjectKeys = []string{validKey}
+
+	_, err := svc.Create(context.Background(), testProfileID, req)
+	_ = assertValidationError(t, err)
+}
+
+func TestEventCommandServiceCreate_EXIFStrip(t *testing.T) {
+	dummyResp := model.CreateEventResponse{ID: "event-001", CreatedAt: time.Now().UTC()}
+	validKey := "natueve/tmp/" + testProfileID + "/uuid.jpg"
+	jpegData := loadTestdata(t, "sample.jpg")
+
+	store := &fakeObjectStore{
+		headSize:        int64(len(jpegData)),
+		headContentType: "image/jpeg",
+		getData:         jpegData,
+	}
+	repoStub := &stubEventRepository{createResult: dummyResp}
+	svc := NewEventCommandService(repoStub, store)
+
+	req := validRequest()
+	req.ImageObjectKeys = []string{validKey}
+
+	_, err := svc.Create(context.Background(), testProfileID, req)
+	assertNoErr(t, err)
+
+	// 再エンコード後のバイト列が Put に渡されていること
+	if len(store.putBody) == 0 {
+		t.Error("再エンコード後の画像が Put に渡されていません")
+	}
+
+	// 再エンコード後のキーが natueve/events/images/ prefix を持つこと
+	if !strings.HasPrefix(store.putKey, "natueve/events/images/") {
+		t.Errorf("最終キー prefix: got %q, want natueve/events/images/", store.putKey)
+	}
+}
+
+func TestEventCommandServiceCreate_CompensationDelete(t *testing.T) {
+	validKey := "natueve/tmp/" + testProfileID + "/uuid.jpg"
+	jpegData := loadTestdata(t, "sample.jpg")
+
+	store := &fakeObjectStore{
+		headSize:        int64(len(jpegData)),
+		headContentType: "image/jpeg",
+		getData:         jpegData,
+	}
+	// repo.Create がエラーを返すように設定
+	repoStub := &stubEventRepository{
+		createErr: errors.New("db error"),
+	}
+	svc := NewEventCommandService(repoStub, store)
+
+	req := validRequest()
+	req.ImageObjectKeys = []string{validKey}
+
+	_, err := svc.Create(context.Background(), testProfileID, req)
+	// repo エラーが伝播すること
+	if err == nil {
+		t.Fatal("エラーを期待したが nil だった")
+	}
+	// 補償削除が呼ばれていること
+	if len(store.deleteKeys) == 0 {
+		t.Error("repo.Create 失敗時に補償削除が呼ばれていません")
+	}
+	// 削除されたキーが natueve/events/images/ prefix を持つこと
+	for _, k := range store.deleteKeys {
+		if !strings.HasPrefix(k, "natueve/events/images/") {
+			t.Errorf("補償削除されたキーが予期しない prefix: %q", k)
+		}
+	}
+}
+
+func TestEventCommandServiceCreate_StoreNilWithKeys(t *testing.T) {
+	repoStub := &stubEventRepository{}
+	// store=nil のまま画像キーを渡す → ValidationError
+	svc := NewEventCommandService(repoStub, nil)
+
+	req := validRequest()
+	req.ImageObjectKeys = []string{"natueve/tmp/" + testProfileID + "/uuid.jpg"}
+
+	_, err := svc.Create(context.Background(), testProfileID, req)
+	_ = assertValidationError(t, err)
 }
