@@ -159,6 +159,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/uploads/presign": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定した kind/contentType に対応する R2 tmp 領域への PUT 署名付き URL を返す。\n返却された uploadUrl に直接 PUT することでクライアントがファイルをアップロードできる。\n取得した objectKey をイベント作成時の imageObjectKeys/pdfObjectKeys に渡すこと。\nkind=\"image\": image/jpeg, image/png のみ対応（WebP は MVP 非対応）。\nkind=\"pdf\": application/pdf のみ対応。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "upload"
+                ],
+                "summary": "アップロード用署名付き URL 発行",
+                "parameters": [
+                    {
+                        "description": "presign リクエスト",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.PresignRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.PresignResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.ValidationErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.UnauthorizedErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "サーバーが正常に稼働しているか確認する",
@@ -399,6 +456,51 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.InternalErrorBody"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.PresignRequest": {
+            "description": "アップロード用署名付き URL の発行リクエスト。",
+            "type": "object",
+            "required": [
+                "contentType",
+                "kind"
+            ],
+            "properties": {
+                "contentType": {
+                    "description": "ContentType は MIME タイプ。\n画像: \"image/jpeg\" / \"image/png\"\nPDF: \"application/pdf\"",
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "kind": {
+                    "description": "Kind はアップロードするファイルの種別。\"image\" または \"pdf\" のみ有効。",
+                    "type": "string",
+                    "enum": [
+                        "image",
+                        "pdf"
+                    ],
+                    "example": "image"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuIve_API_internal_model.PresignResponse": {
+            "description": "アップロード用署名付き URL とオブジェクトキー。",
+            "type": "object",
+            "properties": {
+                "expiresAt": {
+                    "description": "ExpiresAt は署名付き URL の有効期限(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-07-01T10:05:00Z"
+                },
+                "objectKey": {
+                    "description": "ObjectKey はアップロード先のオブジェクトキー。イベント作成時に imageObjectKeys/pdfObjectKeys に渡す。",
+                    "type": "string",
+                    "example": "natueve/tmp/profile-uuid/uuid.jpg"
+                },
+                "uploadUrl": {
+                    "description": "UploadURL はファイルを直接 PUT するための署名付き URL。",
+                    "type": "string",
+                    "example": "https://xxxxx.r2.cloudflarestorage.com/natuportal/natueve/tmp/profile-uuid/uuid.jpg?X-Amz-..."
                 }
             }
         },
