@@ -46,7 +46,7 @@ func validRequest() model.CreateEventRequest {
 func TestEventCommandServiceCreate_Validation(t *testing.T) {
 	dummyResp := model.CreateEventResponse{
 		ID:        "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 	const profileID = "profile-uuid-001"
 
