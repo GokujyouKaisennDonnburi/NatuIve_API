@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CORS() gin.HandlerFunc {
+// NewCORS は CORS(Cross-Origin Resource Sharing) を設定する
+// Gin ミドルウェアを生成して返す。
+func NewCORS() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:3000",
