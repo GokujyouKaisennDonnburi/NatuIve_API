@@ -75,7 +75,7 @@ func validClaims() jwt.MapClaims {
 		"sub":   "d290f1ee-6c54-4b01-90e6-d701748f0851",
 		"email": "user@example.com",
 		"aud":   testAudience,
-		"exp":   time.Now().Add(time.Hour).Unix(),
+		"exp":   time.Now().UTC().Add(time.Hour).Unix(),
 		"user_metadata": map[string]any{
 			"full_name":  "なちゅいべ太郎",
 			"avatar_url": "https://example.com/a.png",
@@ -105,7 +105,7 @@ func TestRequireAuth(t *testing.T) {
 			name: "異常: 期限切れ",
 			authHeader: "Bearer " + signToken(t, key, jwt.MapClaims{
 				"sub": "abc", "aud": testAudience,
-				"exp": time.Now().Add(-time.Hour).Unix(),
+				"exp": time.Now().UTC().Add(-time.Hour).Unix(),
 			}),
 			wantStatus: http.StatusUnauthorized,
 		},
@@ -123,7 +123,7 @@ func TestRequireAuth(t *testing.T) {
 			name: "異常: aud 不一致",
 			authHeader: "Bearer " + signToken(t, key, jwt.MapClaims{
 				"sub": "abc", "aud": "other",
-				"exp": time.Now().Add(time.Hour).Unix(),
+				"exp": time.Now().UTC().Add(time.Hour).Unix(),
 			}),
 			wantStatus: http.StatusUnauthorized,
 		},

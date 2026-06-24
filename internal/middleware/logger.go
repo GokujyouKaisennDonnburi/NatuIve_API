@@ -12,7 +12,7 @@ import (
 // gin.Default() に同梱の Logger ミドルウェアの代わりに使う。
 func SlogLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		start := time.Now()
+		start := time.Now().UTC()
 		path := c.Request.URL.Path
 		if raw := c.Request.URL.RawQuery; raw != "" {
 			path = path + "?" + raw

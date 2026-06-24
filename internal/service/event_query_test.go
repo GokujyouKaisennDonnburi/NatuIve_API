@@ -54,7 +54,7 @@ func TestEventQueryServiceList_Normalization(t *testing.T) {
 
 	// ダミーのサマリーデータ（正規化検証には内容不問）。
 	dummyResults := []model.EventSummary{
-		{ID: "id-1", Title: "テストイベント", EventDate: time.Now(), CreatedAt: time.Now()},
+		{ID: "id-1", Title: "テストイベント", EventDate: time.Now().UTC(), CreatedAt: time.Now().UTC()},
 	}
 	const dummyTotal = 42
 

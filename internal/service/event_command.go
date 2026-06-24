@@ -182,7 +182,7 @@ func buildNewEvent(profileID string, req model.CreateEventRequest) *model.NewEve
 		Title:           strings.TrimSpace(req.Title),
 		Description:     strings.TrimSpace(req.Description),
 		Location:        strings.TrimSpace(req.Location),
-		EventDate:       req.EventDate,
+		EventDate:       req.EventDate.UTC(),
 		Capacity:        req.Capacity,
 		ExternalURL:     strings.TrimSpace(req.ExternalURL),
 		Costs:           costs,
