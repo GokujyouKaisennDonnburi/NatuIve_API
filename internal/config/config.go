@@ -37,14 +37,14 @@ type Config struct {
 
 // Load は環境変数から Config を構築する。
 //
-// PORT が未設定なら 8080、TRUSTED_PROXIES が未設定なら nil(直接接続のみ信頼)。
+// PORT が未設定なら 8085、TRUSTED_PROXIES が未設定なら nil(直接接続のみ信頼)。
 func Load() Config {
 	cfg := Config{
 		Port:        os.Getenv("PORT"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 	}
 	if cfg.Port == "" {
-		cfg.Port = "8080"
+		cfg.Port = "8085"
 	}
 	if v := os.Getenv("TRUSTED_PROXIES"); v != "" {
 		cfg.TrustedProxies = strings.Split(v, ",")
