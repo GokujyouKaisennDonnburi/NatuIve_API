@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/events": {
             "get": {
-                "description": "公開イベントを指定ソート順で返す。認証不要。\nsort は \"created_at\"(デフォルト) / \"event_date\" のみ許可。不正値はデフォルトに戻す。\norder は \"desc\"(デフォルト) / \"asc\" のみ許可。不正値はデフォルトに戻す。",
+                "description": "公開イベントを指定ソート順で返す。認証不要。\nsort は \"created_at\"(デフォルト) / \"event_date\" のみ許可。不正値はデフォルトに戻す。\norder は \"desc\"(デフォルト) / \"asc\" のみ許可。不正値はデフォルトに戻す。\nprifileはProfileSummaryを返す。",
                 "produces": [
                     "application/json"
                 ],
@@ -414,6 +414,14 @@ const docTemplate = `{
                     "type": "string",
                     "example": "東京都新宿御苑"
                 },
+                "profile": {
+                    "description": "ProfileSummary は投稿者プロフィールのサマリー情報。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileSummary"
+                        }
+                    ]
+                },
                 "profileId": {
                     "description": "ProfileID は投稿者のプロフィール ID(UUID)。",
                     "type": "string",
@@ -536,6 +544,26 @@ const docTemplate = `{
                     "description": "UpdatedAt はプロフィール更新日時(RFC3339)。",
                     "type": "string",
                     "example": "2026-06-22T12:00:00Z"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileSummary": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "description": "AvatarURL はアバター画像 URL(未設定なら空)。",
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "displayName": {
+                    "description": "DisplayName は表示名(未設定なら空)。",
+                    "type": "string",
+                    "example": "なちゅいべ太郎"
+                },
+                "id": {
+                    "description": "ID は Supabase Auth のユーザー ID(UUID)。",
+                    "type": "string",
+                    "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
                 }
             }
         },

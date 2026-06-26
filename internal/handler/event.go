@@ -34,6 +34,7 @@ func NewEventHandler(querySvc *service.EventQueryService, cmdSvc *service.EventC
 //	@Description	公開イベントを指定ソート順で返す。認証不要。
 //	@Description	sort は "created_at"(デフォルト) / "event_date" のみ許可。不正値はデフォルトに戻す。
 //	@Description	order は "desc"(デフォルト) / "asc" のみ許可。不正値はデフォルトに戻す。
+//	@Description	prifileはProfileSummaryを返す。
 //	@Tags			event
 //	@Produce		json
 //	@Param			sort	query		string	false	"ソートカラム(created_at|event_date, default: created_at)"
