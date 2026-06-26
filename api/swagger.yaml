@@ -133,6 +133,10 @@ definitions:
         description: Location は開催場所（文字列）。
         example: 東京都新宿御苑
         type: string
+      profile:
+        allOf:
+        - $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileSummary'
+        description: ProfileSummary は投稿者プロフィールのサマリー情報。
       profileId:
         description: ProfileID は投稿者のプロフィール ID(UUID)。
         example: d290f1ee-6c54-4b01-90e6-d701748f0851
@@ -230,6 +234,21 @@ definitions:
         example: "2026-06-22T12:00:00Z"
         type: string
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileSummary:
+    properties:
+      avatarUrl:
+        description: AvatarURL はアバター画像 URL(未設定なら空)。
+        example: https://example.com/avatar.png
+        type: string
+      displayName:
+        description: DisplayName は表示名(未設定なら空)。
+        example: なちゅいべ太郎
+        type: string
+      id:
+        description: ID は Supabase Auth のユーザー ID(UUID)。
+        example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        type: string
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorBody:
     properties:
       code:
@@ -274,6 +293,7 @@ paths:
         公開イベントを指定ソート順で返す。認証不要。
         sort は "created_at"(デフォルト) / "event_date" のみ許可。不正値はデフォルトに戻す。
         order は "desc"(デフォルト) / "asc" のみ許可。不正値はデフォルトに戻す。
+        prifileはProfileSummaryを返す。
       parameters:
       - description: 'ソートカラム(created_at|event_date, default: created_at)'
         in: query

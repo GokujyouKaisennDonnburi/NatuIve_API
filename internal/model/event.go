@@ -81,6 +81,8 @@ type EventSummary struct {
 	EventDate time.Time `json:"eventDate" example:"2026-07-01T10:00:00Z"`
 	// CreatedAt はレコード作成日時(RFC3339)。
 	CreatedAt time.Time `json:"createdAt" example:"2026-06-22T12:00:00Z"`
+	// ProfileSummary は投稿者プロフィールのサマリー情報。
+	Profile ProfileSummary `json:"profile"`
 }
 
 // EventListResponse はイベント一覧取得エンドポイントのレスポンス型。
