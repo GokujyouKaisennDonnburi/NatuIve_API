@@ -227,43 +227,66 @@ func (r *eventPostgres) Create(ctx context.Context, e *model.NewEvent) (model.Cr
 
 func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventResponse, error) {
 	const query = `
-		SELECT	e.id, e.profile_id, e.title, e.description, e.location, e.event_date,
-				e.capacity, e.external_url, e.created_at, e.updated_at,
-				p.id, p.display_name, p.avatar_url
-		FROM 	events e
-		JOIN 	profiles p ON p.id = e.profile_id
-		WHERE 	e.id = $1`
+		SELECT		e.id, e.title, e.description, e.location, e.event_date,
+					e.capacity, e.external_url, e.created_at, e.updated_at,
+					p.id, p.display_name, p.avatar_url
+		FROM 		events e
+		LEFT JOIN  	profiles p ON p.id = e.profile_id
+		WHERE 		e.id = $1`
 
 	var (
 		e model.EventResponse
 		p model.ProfileSummary
+
+		desc        sql.NullString
+		location    sql.NullString
+		externalURL sql.NullString
+		avatarURL   sql.NullString
 	)
+
+	// 初期化（JSON安定化）
+	e.Costs = []model.EventCostResponse{}
+	e.Items = []model.EventItemResponse{}
+	e.ImageObjectKeys = []string{}
+	e.PdfObjectKeys = []string{}
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&e.ID,
 		&e.Title,
-		&e.Description,
-		&e.Location,
+		&desc,
+		&location,
 		&e.EventDate,
 		&e.Capacity,
-		&e.ExternalURL,
+		&externalURL,
 		&e.CreatedAt,
 		&e.UpdatedAt,
 		&p.ID,
 		&p.DisplayName,
-		&p.AvatarURL,
+		&avatarURL,
 	)
 
 	if err != nil {
 		return nil, fmt.Errorf("get event by id: %w", err)
 	}
 
-	e.Profile = model.ProfileSummary{
-		ID:          p.ID,
-		DisplayName: p.DisplayName,
-		AvatarURL:   p.AvatarURL,
+	// NULL安全変換
+	if desc.Valid {
+		e.Description = desc.String
+	}
+	if location.Valid {
+		e.Location = location.String
+	}
+	if externalURL.Valid {
+		e.ExternalURL = externalURL.String
+	}
+	if avatarURL.Valid {
+		p.AvatarURL = avatarURL.String
 	}
 
+	// profile構築
+	e.Profile = p
+
+	// costs
 	const costQuery = `
 		SELECT 	category, cost
 		FROM 	event_costs
