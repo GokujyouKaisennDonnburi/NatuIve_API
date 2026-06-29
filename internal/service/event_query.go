@@ -2,11 +2,15 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
+	"errors"
 
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/model"
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/repository"
 )
+
+// ErrEventNotFound はイベントが見つからない場合のエラー。
+var ErrEventNotFound = errors.New("event not found")
 
 const (
 	// defaultLimit はページネーションのデフォルト取得件数。
@@ -106,12 +110,10 @@ func normalizeOrder(order string) string {
 func (s *EventQueryService) GetByID(ctx context.Context, id string) (*model.EventResponse, error) {
 	event, err := s.repo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrEventNotFound
+		}
 		return nil, err
-	}
-
-	// 見つからない場合のハンドリング（将来改善可能）
-	if event == nil {
-		return nil, fmt.Errorf("event not found")
 	}
 
 	return event, nil

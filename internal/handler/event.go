@@ -149,6 +149,10 @@ func (h *EventHandler) GetByID(c *gin.Context) {
 
 	event, err := h.querySvc.GetByID(c.Request.Context(), id)
 	if err != nil {
+		if errors.Is(err, service.ErrEventNotFound) {
+			c.JSON(http.StatusNotFound, model.NewErrorResponse("not_found", "イベントが見つかりません"))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, model.NewErrorResponse(
 			"internal_error",
 			"イベントの取得に失敗しました",

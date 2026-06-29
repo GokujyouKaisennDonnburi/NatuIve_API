@@ -238,10 +238,13 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 		e model.EventResponse
 		p model.ProfileSummary
 
-		desc        sql.NullString
-		location    sql.NullString
-		externalURL sql.NullString
-		avatarURL   sql.NullString
+		desc         sql.NullString
+		location     sql.NullString
+		externalURL  sql.NullString
+		avatarURL    sql.NullString
+		capacityNull sql.NullInt32
+		pID          sql.NullString
+		displayName  sql.NullString
 	)
 
 	// 初期化（JSON安定化）
@@ -256,12 +259,12 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 		&desc,
 		&location,
 		&e.EventDate,
-		&e.Capacity,
+		&capacityNull,
 		&externalURL,
 		&e.CreatedAt,
 		&e.UpdatedAt,
-		&p.ID,
-		&p.DisplayName,
+		&pID,
+		&displayName,
 		&avatarURL,
 	)
 
@@ -281,6 +284,15 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 	}
 	if avatarURL.Valid {
 		p.AvatarURL = avatarURL.String
+	}
+	if capacityNull.Valid {
+		e.Capacity = int(capacityNull.Int32)
+	}
+	if pID.Valid {
+		p.ID = pID.String
+	}
+	if displayName.Valid {
+		p.DisplayName = displayName.String
 	}
 
 	// profile構築
