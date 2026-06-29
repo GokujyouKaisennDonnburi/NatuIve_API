@@ -125,3 +125,30 @@ func queryInt(c *gin.Context, key string, defaultVal int) int {
 	}
 	return v
 }
+
+// GetByID godoc
+//
+//	@Summary		イベント詳細取得
+//	@Description	指定されたイベントIDの詳細情報を取得する
+//	@Tags			event
+//	@Produce		json
+//	@Param			id	path	string	true	"イベントID"
+//	@Success		200	{object}	model.EventResponse
+//	@Failure		400	{object}	model.ErrorResponse
+//	@Failure		500	{object}	model.ErrorResponse
+//	@Router			/api/v1/events/{id} [get]
+func (h *EventHandler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, model.NewErrorResponse("invalid_request", "id is required"))
+		return
+	}
+
+	event, err := h.querySvc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, model.NewErrorResponse("internal_error", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, event)
+}

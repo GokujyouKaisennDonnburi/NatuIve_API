@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/model"
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/repository"
@@ -99,4 +100,19 @@ func normalizeOrder(order string) string {
 	default:
 		return defaultOrder
 	}
+}
+
+// GetByID は指定されたイベント ID の詳細情報を取得する。
+func (s *EventQueryService) GetByID(ctx context.Context, id string) (*model.EventResponse, error) {
+	event, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 見つからない場合のハンドリング（将来改善可能）
+	if event == nil {
+		return nil, fmt.Errorf("event not found")
+	}
+
+	return event, nil
 }
