@@ -187,7 +187,7 @@ func (s *EventCommandService) promoteOneObject(ctx context.Context, profileID, k
 	}
 
 	// 最終キー生成
-	finalKey := buildFinalKey(ct)
+	finalKey := buildFinalKey("events", ct)
 
 	if isImage {
 		// EXIF/GPS 除去: 再エンコード（geofuzzing ルール準拠）
