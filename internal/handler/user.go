@@ -69,13 +69,6 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 //	@Router			/api/v1/profiles/{id} [get]
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	id := c.Param("id")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, model.NewErrorResponse(
-			"bad_request",
-			"ユーザー ID は必須です",
-		))
-		return
-	}
 
 	profile, err := h.svc.GetByID(c.Request.Context(), id)
 	if err != nil {
