@@ -17,8 +17,10 @@ type CreateReportRequest struct {
 }
 
 // NewReport は検証済みのレポートドメイン型。repository 層に渡す。
+//
+// 投稿者は events.profile_id で表現され（投稿者＝イベント投稿者を service 層で強制）、
+// reports テーブルに profile_id を持たないためドメイン型にも保持しない。
 type NewReport struct {
-	profileID       string
 	EventID         string
 	Content         string
 	ImageObjectKeys []string

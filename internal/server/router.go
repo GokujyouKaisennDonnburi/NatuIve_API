@@ -70,7 +70,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	reportCmdSvc := service.NewReportCommandService(reportRepo, eventRepo, store)
 
 	eventHandler := handler.NewEventHandler(eventQuerySvc, eventCmdSvc, profileSvc)
-	reportHandler := handler.NewReportHandler(reportCmdSvc, profileSvc)
+	reportHandler := handler.NewReportHandler(reportCmdSvc)
 
 	v1Public := r.Group("/api/v1")
 	v1Public.GET("/events", eventHandler.List)

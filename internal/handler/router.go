@@ -13,15 +13,13 @@ import (
 
 // ReportHandler はレポート投稿系のエンドポイントを担当する。
 type ReportHandler struct {
-	cmdSvc     *service.ReportCommandService
-	profileSvc *service.ProfileService
+	cmdSvc *service.ReportCommandService
 }
 
 // NewReportHandler は ReportHandler を生成する。
-func NewReportHandler(cmdSvc *service.ReportCommandService, profileSvc *service.ProfileService) *ReportHandler {
+func NewReportHandler(cmdSvc *service.ReportCommandService) *ReportHandler {
 	return &ReportHandler{
-		cmdSvc:     cmdSvc,
-		profileSvc: profileSvc,
+		cmdSvc: cmdSvc,
 	}
 }
 
@@ -41,22 +39,12 @@ func NewReportHandler(cmdSvc *service.ReportCommandService, profileSvc *service.
 //	@Failure		500		{object}	model.InternalErrorResponse
 //	@Router			/api/v1/reports [post]
 func (h *ReportHandler) Create(c *gin.Context) {
-	// 認証済みユーザーを取得する
+	// 認証済みユーザーを取得する。
+	// 投稿者のプロフィール存在保証は不要: service 層で「投稿者＝イベント投稿者」を
+	// 強制しており、イベント投稿者のプロフィールは events.profile_id の FK で保証済み。
 	authUser, ok := middleware.AuthFromContext(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, model.NewErrorResponse("unauthorized", "認証が必要です"))
-		return
-	}
-
-	// プロフィールの存在を保証する（reports.profile_id FK 対応）。
-	_, err := h.profileSvc.GetOrCreate(c.Request.Context(), service.AuthenticatedUser{
-		ID:          authUser.ID,
-		Email:       authUser.Email,
-		DisplayName: authUser.DisplayName,
-		AvatarURL:   authUser.AvatarURL,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, model.NewErrorResponse("internal_error", "プロフィールの取得に失敗しました"))
 		return
 	}
 

@@ -76,7 +76,7 @@ func (s *ReportCommandService) Create(ctx context.Context, profileID string, req
 	}
 
 	// repo.Create に最終キーを渡す
-	report := buildNewReport(profileID, req, finalImageKeys, finalPdfKeys)
+	report := buildNewReport(req, finalImageKeys, finalPdfKeys)
 	resp, err := s.repo.Create(ctx, &report)
 	if err != nil {
 		// repo.Create 失敗時: 配置済みキーを best-effort Delete（補償）
@@ -177,8 +177,7 @@ func validateCreateReportRequest(req model.CreateReportRequest) error {
 // buildNewReport は検証済みリクエストから NewReport を組み立てる（文字列は trim 済み）。
 //
 // ImageObjectKeys / PdfObjectKeys は呼び出し元が昇格済みキーを渡す。
-func buildNewReport(profileID string, req model.CreateReportRequest, finalImageKeys, finalPdfKeys []string) model.NewReport {
-	_ = profileID // NewReport は profileID を保持しない（reports テーブルに該当カラムなし）
+func buildNewReport(req model.CreateReportRequest, finalImageKeys, finalPdfKeys []string) model.NewReport {
 	return model.NewReport{
 		EventID:         strings.TrimSpace(req.EventID),
 		Content:         strings.TrimSpace(req.Content),
