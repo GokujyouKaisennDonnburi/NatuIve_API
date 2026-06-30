@@ -48,8 +48,10 @@ func (s *ProfileService) GetOrCreate(ctx context.Context, u AuthenticatedUser) (
 	return p, nil
 }
 
+// ErrProfileNotFound はプロフィールが存在しない場合に返されるエラー。
 var ErrProfileNotFound = errors.New("profile not found")
 
+// GetByID はユーザーIDをもとにプロフィールを取得する。
 func (s *ProfileService) GetByID(ctx context.Context, id string) (*model.Profile, error) {
 	p, err := s.repo.GetByID(ctx, id)
 	if err != nil {
