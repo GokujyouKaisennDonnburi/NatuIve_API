@@ -14,49 +14,45 @@ type ReportRepository interface {
 	Create(ctx context.Context, r *model.NewReport) (model.CreateReportResponse, error)
 }
 
-// ReportPostgres は ReportRepository の PostgreSQL 実装。
+// reportPostgres は ReportRepository の PostgreSQL 実装。
 type reportPostgres struct {
 	db *sql.DB
 }
 
-// Createはレポート関連テーブル(画像, PDF)を含めて一括登録する。
+// NewReportRepository は *sql.DB を使う ReportRepository を生成する。
+func NewReportRepository(db *sql.DB) ReportRepository {
+	return &reportPostgres{db: db}
+}
+
+// Create はレポート関連テーブル（画像・PDF）を含めてトランザクション内で一括登録する。
 func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (model.CreateReportResponse, error) {
 	// トランザクション開始
 	tx, err := r.db.BeginTx(ctx, nil)
-
-	// トランザクション開始に失敗した場合はエラーを返す
 	if err != nil {
 		return model.CreateReportResponse{}, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// reportsテーブルにインサートし、IDと作成日時を取得する
+	// レポート本体を登録
 	const insertReport = `
-	INSERT INTO reports (event_id, content)
-	VALUES ($1, $2)
-	RETURNING id, created_at
+		INSERT INTO reports (event_id, content)
+		VALUES ($1, $2)
+		RETURNING id, created_at
 	`
-
-	// レスポンス用の変数を宣言
+	// レポートIDと作成日時を取得
 	var resp model.CreateReportResponse
-	err = tx.QueryRowContext(ctx, insertReport,
+	if err := tx.QueryRowContext(ctx, insertReport,
 		report.EventID,
-		report.Content).Scan(&resp.ReportID, &resp.CreatedAt)
-	if err != nil {
+		report.Content,
+	).Scan(&resp.ReportID, &resp.CreatedAt); err != nil {
 		return model.CreateReportResponse{}, fmt.Errorf("insert report: %w", err)
 	}
 
-	// var reportID string
-	// var createdAt string
-	// if err := tx.QueryRowContext(ctx, insertReport, report.EventID, report.Content).Scan(&reportID, &createdAt); err != nil {
-	// 	return model.CreateReportResponse{}, fmt.Errorf("insert report: %w", err)
-	// }
-
-	// 画像オブジェクトキーが存在する場合、関連テーブルにインサートする
+	// 画像・PDFの関連テーブルに登録
 	if len(report.ImageObjectKeys) > 0 {
 		const insertImage = `
-		INSERT INTO report_images (report_id, object_key)
-		VALUES ($1, $2)
+			INSERT INTO report_images (report_id, object_key)
+			VALUES ($1, $2)
 		`
 		for _, objectKey := range report.ImageObjectKeys {
 			if _, err := tx.ExecContext(ctx, insertImage, resp.ReportID, objectKey); err != nil {
@@ -65,11 +61,11 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 		}
 	}
 
-	// PDFオブジェクトキーが存在する場合、関連テーブルにインサートする
+	// PDFの関連テーブルに登録
 	if len(report.PdfObjectKeys) > 0 {
 		const insertPDF = `
-		INSERT INTO report_pdfs (report_id, object_key)
-		VALUES ($1, $2)
+			INSERT INTO report_pdfs (report_id, object_key)
+			VALUES ($1, $2)
 		`
 		for _, objectKey := range report.PdfObjectKeys {
 			if _, err := tx.ExecContext(ctx, insertPDF, resp.ReportID, objectKey); err != nil {
@@ -78,7 +74,7 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 		}
 	}
 
-	// トランザクションをコミットする
+	// トランザクションをコミット
 	if err := tx.Commit(); err != nil {
 		return model.CreateReportResponse{}, fmt.Errorf("commit transaction: %w", err)
 	}
