@@ -70,6 +70,22 @@ definitions:
         example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         type: string
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorBody:
+    properties:
+      code:
+        description: Code は機械可読なエラーコード。
+        example: internal_error
+        type: string
+      message:
+        description: Message は人間向けのエラーメッセージ。
+        example: サーバー内部でエラーが発生しました
+        type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorBody'
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventCostInput:
     properties:
       category:
@@ -83,6 +99,13 @@ definitions:
     required:
     - category
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventCostResponse:
+    properties:
+      category:
+        type: string
+      cost:
+        type: integer
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventItemInput:
     properties:
       isRequired:
@@ -94,6 +117,13 @@ definitions:
         type: string
     required:
     - item
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventItemResponse:
+    properties:
+      isRequired:
+        type: boolean
+      item:
+        type: string
     type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventListResponse:
     properties:
@@ -114,6 +144,45 @@ definitions:
         description: TotalCount はフィルタなし全件数。クライアントが最終ページ offset を算出するために使う。
         example: 153
         type: integer
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventResponse:
+    properties:
+      capacity:
+        type: integer
+      costs:
+        items:
+          $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventCostResponse'
+        type: array
+      createdAt:
+        type: string
+      description:
+        type: string
+      eventDate:
+        type: string
+      externalUrl:
+        type: string
+      id:
+        type: string
+      imageObjectKeys:
+        items:
+          type: string
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventItemResponse'
+        type: array
+      location:
+        type: string
+      pdfObjectKeys:
+        items:
+          type: string
+        type: array
+      profile:
+        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileSummary'
+      title:
+        type: string
+      updatedAt:
+        type: string
     type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventSummary:
     properties:
@@ -358,6 +427,33 @@ paths:
       security:
       - BearerAuth: []
       summary: イベント投稿
+      tags:
+      - event
+  /api/v1/events/{id}:
+    get:
+      description: 指定されたイベントIDの詳細情報を取得する
+      parameters:
+      - description: イベントID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+      summary: イベント詳細取得
       tags:
       - event
   /api/v1/me:

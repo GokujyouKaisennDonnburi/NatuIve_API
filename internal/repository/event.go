@@ -25,6 +25,8 @@ type EventRepository interface {
 	ListSummaries(ctx context.Context, sort, order string, limit, offset int) ([]model.EventSummary, error)
 	// CountSummaries は events テーブルの全件数を返す。
 	CountSummaries(ctx context.Context) (int, error)
+	// GetByID は指定されたイベント ID の詳細情報を取得する。
+	GetByID(ctx context.Context, id string) (*model.EventResponse, error)
 	// Create はイベントを関連テーブルとともにトランザクション内で一括登録する。
 	Create(ctx context.Context, e *model.NewEvent) (model.CreateEventResponse, error)
 }
@@ -221,4 +223,168 @@ func (r *eventPostgres) Create(ctx context.Context, e *model.NewEvent) (model.Cr
 	}
 
 	return resp, nil
+}
+
+func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventResponse, error) {
+	const query = `
+		SELECT		e.id, e.title, e.description, e.location, e.event_date,
+					e.capacity, e.external_url, e.created_at, e.updated_at,
+					p.id, p.display_name, p.avatar_url
+		FROM 		events e
+		LEFT JOIN  	profiles p ON p.id = e.profile_id
+		WHERE 		e.id = $1`
+
+	var (
+		e model.EventResponse
+		p model.ProfileSummary
+
+		desc         sql.NullString
+		location     sql.NullString
+		externalURL  sql.NullString
+		avatarURL    sql.NullString
+		capacityNull sql.NullInt32
+		pID          sql.NullString
+		displayName  sql.NullString
+	)
+
+	// 初期化（JSON安定化）
+	e.Costs = []model.EventCostResponse{}
+	e.Items = []model.EventItemResponse{}
+	e.ImageObjectKeys = []string{}
+	e.PdfObjectKeys = []string{}
+
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&e.ID,
+		&e.Title,
+		&desc,
+		&location,
+		&e.EventDate,
+		&capacityNull,
+		&externalURL,
+		&e.CreatedAt,
+		&e.UpdatedAt,
+		&pID,
+		&displayName,
+		&avatarURL,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("get event by id: %w", err)
+	}
+
+	// NULL安全変換
+	if desc.Valid {
+		e.Description = desc.String
+	}
+	if location.Valid {
+		e.Location = location.String
+	}
+	if externalURL.Valid {
+		e.ExternalURL = externalURL.String
+	}
+	if avatarURL.Valid {
+		p.AvatarURL = avatarURL.String
+	}
+	if capacityNull.Valid {
+		e.Capacity = int(capacityNull.Int32)
+	}
+	if pID.Valid {
+		p.ID = pID.String
+	}
+	if displayName.Valid {
+		p.DisplayName = displayName.String
+	}
+
+	// profile構築
+	e.Profile = p
+
+	// costs
+	const costQuery = `
+		SELECT 	category, cost
+		FROM 	event_costs
+		WHERE 	event_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, costQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("get costs: %w", err)
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	for rows.Next() {
+		var c model.EventCostResponse
+		if err := rows.Scan(&c.Category, &c.Cost); err != nil {
+			return nil, fmt.Errorf("scan cost: %w", err)
+		}
+		e.Costs = append(e.Costs, c)
+	}
+
+	// items
+	const itemQuery = `
+		SELECT 	event_item, is_required
+		FROM 	event_items
+		WHERE 	event_id = $1`
+
+	itemRows, err := r.db.QueryContext(ctx, itemQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("get items: %w", err)
+	}
+	defer func() {
+		_ = itemRows.Close()
+	}()
+
+	for itemRows.Next() {
+		var i model.EventItemResponse
+		if err := itemRows.Scan(&i.Item, &i.IsRequired); err != nil {
+			return nil, fmt.Errorf("scan item: %w", err)
+		}
+		e.Items = append(e.Items, i)
+	}
+
+	// images
+	const imageQuery = `
+		SELECT 	image_objectkey
+		FROM 	event_images
+		WHERE 	event_id = $1`
+
+	imageRows, err := r.db.QueryContext(ctx, imageQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("get images: %w", err)
+	}
+	defer func() {
+		_ = imageRows.Close()
+	}()
+
+	for imageRows.Next() {
+		var key string
+		if err := imageRows.Scan(&key); err != nil {
+			return nil, fmt.Errorf("scan image: %w", err)
+		}
+		e.ImageObjectKeys = append(e.ImageObjectKeys, key)
+	}
+
+	// pdfs
+	const pdfQuery = `
+		SELECT 	pdf_objectkey
+		FROM 	event_pdfs
+		WHERE 	event_id = $1`
+
+	pdfRows, err := r.db.QueryContext(ctx, pdfQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("get pdfs: %w", err)
+	}
+	defer func() {
+		_ = pdfRows.Close()
+	}()
+
+	for pdfRows.Next() {
+		var key string
+		if err := pdfRows.Scan(&key); err != nil {
+			return nil, fmt.Errorf("scan pdf: %w", err)
+		}
+		e.PdfObjectKeys = append(e.PdfObjectKeys, key)
+	}
+
+	return &e, nil
 }
