@@ -624,6 +624,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "imageUrls": {
+                    "description": "ImageUrls は ImageObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -634,6 +641,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pdfObjectKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfUrls": {
+                    "description": "PdfUrls は PdfObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
                     "type": "array",
                     "items": {
                         "type": "string"
