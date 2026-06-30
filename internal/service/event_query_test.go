@@ -242,7 +242,7 @@ func TestEventQueryServiceList_Normalization(t *testing.T) {
 				err:        tt.repoErr,
 				countErr:   tt.countErr,
 			}
-			svc := NewEventQueryService(stub)
+			svc := NewEventQueryService(stub, "")
 
 			got, err := svc.List(context.Background(), tt.inputSort, tt.inputOrder, tt.inputLimit, tt.inputOffset)
 
