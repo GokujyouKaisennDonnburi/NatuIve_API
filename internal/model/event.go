@@ -98,3 +98,33 @@ type EventListResponse struct {
 	// Offset は正規化後の実際に使われた取得開始位置。
 	Offset int `json:"offset" example:"0"`
 }
+
+// EventResponse はイベント詳細取得エンドポイントのレスポンス型。
+type EventResponse struct {
+	ID              string              `json:"id"`
+	Profile         ProfileSummary      `json:"profile"`
+	Title           string              `json:"title"`
+	Description     string              `json:"description"`
+	Location        string              `json:"location"`
+	EventDate       time.Time           `json:"eventDate"`
+	Capacity        int                 `json:"capacity"`
+	ExternalURL     string              `json:"externalUrl"`
+	Costs           []EventCostResponse `json:"costs"`
+	Items           []EventItemResponse `json:"items"`
+	ImageObjectKeys []string            `json:"imageObjectKeys"`
+	PdfObjectKeys   []string            `json:"pdfObjectKeys"`
+	CreatedAt       time.Time           `json:"createdAt"`
+	UpdatedAt       time.Time           `json:"updatedAt"`
+}
+
+// EventCostResponse はイベント費用のレスポンス DTO。
+type EventCostResponse struct {
+	Category string `json:"category"`
+	Cost     int    `json:"cost"`
+}
+
+// EventItemResponse はイベント持ち物のレスポンス DTO。
+type EventItemResponse struct {
+	Item       string `json:"item"`
+	IsRequired bool   `json:"isRequired"`
+}

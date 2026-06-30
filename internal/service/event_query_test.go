@@ -51,6 +51,10 @@ func (s *stubEventRepository) GetOwnerProfileID(_ context.Context, _ string) (st
 	return s.ownerProfileID, s.ownerProfileIDErr
 }
 
+func (s *stubEventRepository) GetByID(_ context.Context, _ string) (*model.EventResponse, error) {
+	return nil, nil
+}
+
 // makeHelper はテストヘルパー共通処理を担う。
 func makeHelper(t *testing.T) {
 	t.Helper()
