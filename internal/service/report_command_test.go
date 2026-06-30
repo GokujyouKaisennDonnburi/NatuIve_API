@@ -55,14 +55,14 @@ func TestReportCommandServiceCreate_AuthorizationCheck(t *testing.T) {
 	}
 
 	tests := []struct {
-		name               string
-		profileID          string
-		req                model.CreateReportRequest
-		ownerProfileID     string
-		ownerProfileIDErr  error
-		wantValidationErr  bool
-		wantForbiddenErr   bool
-		wantErr            bool
+		name              string
+		profileID         string
+		req               model.CreateReportRequest
+		ownerProfileID    string
+		ownerProfileIDErr error
+		wantValidationErr bool
+		wantForbiddenErr  bool
+		wantErr           bool
 	}{
 		{
 			name:           "正常: イベント存在かつ投稿者一致",
