@@ -223,7 +223,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileResponse"
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfilePublic"
                         }
                     },
                     "404": {
@@ -695,6 +695,31 @@ const docTemplate = `{
                     "description": "UploadURL はファイルを直接 PUT するための署名付き URL。",
                     "type": "string",
                     "example": "https://xxxxx.r2.cloudflarestorage.com/natuportal/natueve/tmp/profile-uuid/uuid.jpg?X-Amz-..."
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfilePublic": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "description": "AvatarURL はアバター画像 URL(未設定なら空)。",
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "description": {
+                    "description": "Description は自己紹介(未設定なら空)。",
+                    "type": "string",
+                    "example": "イベントを楽しむのが好きです。"
+                },
+                "displayName": {
+                    "description": "DisplayName は表示名(未設定なら空)。",
+                    "type": "string",
+                    "example": "なちゅいべ太郎"
+                },
+                "id": {
+                    "description": "ID は Supabase Auth のユーザー ID(UUID)。",
+                    "type": "string",
+                    "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
                 }
             }
         },
