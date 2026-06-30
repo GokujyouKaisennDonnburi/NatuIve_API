@@ -37,6 +37,7 @@ func NewReportHandler(cmdSvc *service.ReportCommandService, profileSvc *service.
 //	@Success		201		{object}	model.CreateReportResponse
 //	@Failure		400		{object}	model.ValidationErrorResponse
 //	@Failure		401		{object}	model.UnauthorizedErrorResponse
+//	@Failure		403		{object}	model.ForbiddenErrorResponse
 //	@Failure		500		{object}	model.InternalErrorResponse
 //	@Router			/api/v1/reports [post]
 func (h *ReportHandler) Create(c *gin.Context) {
@@ -69,6 +70,11 @@ func (h *ReportHandler) Create(c *gin.Context) {
 	// レポートを作成する
 	resp, err := h.cmdSvc.Create(c.Request.Context(), authUser.ID, req)
 	if err != nil {
+		var fe *service.ForbiddenError
+		if errors.As(err, &fe) {
+			c.JSON(http.StatusForbidden, model.NewErrorResponse("forbidden", fe.Message))
+			return
+		}
 		var ve *service.ValidationError
 		if errors.As(err, &ve) {
 			c.JSON(http.StatusBadRequest, model.NewErrorResponse("invalid_request", ve.Message))

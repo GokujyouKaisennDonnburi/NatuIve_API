@@ -67,7 +67,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	profileSvc := service.NewProfileService(profileRepo)
 
 	reportRepo := repository.NewReportRepository(sqlDB)
-	reportCmdSvc := service.NewReportCommandService(reportRepo, store)
+	reportCmdSvc := service.NewReportCommandService(reportRepo, eventRepo, store)
 
 	eventHandler := handler.NewEventHandler(eventQuerySvc, eventCmdSvc, profileSvc)
 	reportHandler := handler.NewReportHandler(reportCmdSvc, profileSvc)

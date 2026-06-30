@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -14,17 +16,19 @@ import (
 //
 // CQRS の Command 側として位置づけ、参照系（EventQueryService）とは分離する。
 type ReportCommandService struct {
-	repo  repository.ReportRepository
-	store ObjectStore // nil 安全。nil の場合はキー昇格なし。
+	repo      repository.ReportRepository
+	eventRepo repository.EventRepository
+	store     ObjectStore // nil 安全。nil の場合はキー昇格なし。
 }
 
 // NewReportCommandService は ReportCommandService を生成する。
-
+//
 // store が nil の場合、画像・PDFのオブジェクトキー昇格は行わない。
-func NewReportCommandService(repo repository.ReportRepository, store ObjectStore) *ReportCommandService {
+func NewReportCommandService(repo repository.ReportRepository, eventRepo repository.EventRepository, store ObjectStore) *ReportCommandService {
 	return &ReportCommandService{
-		repo:  repo,
-		store: store,
+		repo:      repo,
+		eventRepo: eventRepo,
+		store:     store,
 	}
 }
 
@@ -35,6 +39,19 @@ func (s *ReportCommandService) Create(ctx context.Context, profileID string, req
 	// 既存フィールド検証
 	if err := validateCreateReportRequest(req); err != nil {
 		return model.CreateReportResponse{}, err
+	}
+
+	// 認可チェック: 対象イベントの投稿者のみレポートを投稿できる。
+	// キー昇格・INSERT より前に実施し、無駄なオブジェクト操作を避ける。
+	ownerID, err := s.eventRepo.GetOwnerProfileID(ctx, strings.TrimSpace(req.EventID))
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.CreateReportResponse{}, &ValidationError{Message: "指定されたイベントが存在しません"}
+	}
+	if err != nil {
+		return model.CreateReportResponse{}, fmt.Errorf("get event owner: %w", err)
+	}
+	if ownerID != profileID {
+		return model.CreateReportResponse{}, &ForbiddenError{Message: "このイベントにレポートを投稿する権限がありません"}
 	}
 
 	hasKeys := len(req.ImageObjectKeys) > 0 || len(req.PdfObjectKeys) > 0

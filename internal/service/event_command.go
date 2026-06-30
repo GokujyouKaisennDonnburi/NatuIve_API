@@ -23,6 +23,18 @@ func (e *ValidationError) Error() string {
 	return e.Message
 }
 
+// ForbiddenError はアクセス権限のないリソースへの操作を表す型付きエラー。
+//
+// handler 層が errors.As で判定し、HTTP 403 を返すために使う。
+type ForbiddenError struct {
+	Message string
+}
+
+// Error は error インターフェイスを実装する。
+func (e *ForbiddenError) Error() string {
+	return e.Message
+}
+
 // EventCommandService はイベント書き込み系のビジネスロジックを提供する。
 //
 // CQRS の Command 側として位置づけ、参照系（EventQueryService）とは分離する。

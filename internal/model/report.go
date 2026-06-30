@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // CreateReportRequest はレポート投稿エンドポイントのリクエストボディ DTO。
 //
 // @Description	レポート投稿に必要な情報。
@@ -23,10 +25,10 @@ type NewReport struct {
 	PdfObjectKeys   []string
 }
 
-// はレポート投稿エンドポイントのレスポンス DTO。
+// CreateReportResponse はレポート投稿エンドポイントのレスポンス DTO。
 type CreateReportResponse struct {
 	// ReportID は作成されたレポートのID。
 	ReportID string `json:"reportId" example:"report_1234567890"`
-	// createdAt は作成日時。
-	CreatedAt string `json:"createdAt" example:"2024-06-26T03:08:24Z"`
+	// CreatedAt はレコード作成日時(RFC3339)。DB の TIMESTAMPTZ を UTC で保持する。
+	CreatedAt time.Time `json:"createdAt" example:"2026-06-26T03:08:24Z"`
 }
