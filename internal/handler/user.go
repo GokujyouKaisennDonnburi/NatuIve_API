@@ -63,7 +63,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 //	@Tags			user
 //	@Produce		json
 //	@Param			id	path	string	true	"ユーザー ID"
-//	@Success		200	{object}	model.ProfileResponse
+//	@Success		200	{object}	model.ProfilePublic
 //	@Failure		404	{object}	model.ErrorResponse
 //	@Failure		500	{object}	model.InternalErrorResponse
 //	@Router			/api/v1/profiles/{id} [get]
@@ -85,5 +85,5 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, model.NewProfileResponse(profile))
+	c.JSON(http.StatusOK, model.NewProfilePublic(profile))
 }
