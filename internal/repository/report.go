@@ -35,8 +35,8 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 
 	// レポート本体を登録
 	const insertReport = `
-		INSERT INTO reports (event_id, content)
-		VALUES ($1, $2)
+		INSERT INTO reports (id, event_id, content)
+		VALUES (gen_random_uuid(), $1, $2)
 		RETURNING id, created_at
 	`
 	// レポートIDと作成日時を取得
@@ -51,8 +51,8 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 	// 画像・PDFの関連テーブルに登録
 	if len(report.ImageObjectKeys) > 0 {
 		const insertImage = `
-			INSERT INTO report_images (report_id, object_key)
-			VALUES ($1, $2)
+			INSERT INTO report_images (id, report_id, image_objectkey)
+			VALUES (gen_random_uuid(), $1, $2)
 		`
 		for _, objectKey := range report.ImageObjectKeys {
 			if _, err := tx.ExecContext(ctx, insertImage, resp.ReportID, objectKey); err != nil {
@@ -64,8 +64,8 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 	// PDFの関連テーブルに登録
 	if len(report.PdfObjectKeys) > 0 {
 		const insertPDF = `
-			INSERT INTO report_pdfs (report_id, object_key)
-			VALUES ($1, $2)
+			INSERT INTO report_pdfs (id, report_id, pdf_objectkey)
+			VALUES (gen_random_uuid(), $1, $2)
 		`
 		for _, objectKey := range report.PdfObjectKeys {
 			if _, err := tx.ExecContext(ctx, insertPDF, resp.ReportID, objectKey); err != nil {
