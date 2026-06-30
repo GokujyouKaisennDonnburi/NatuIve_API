@@ -66,7 +66,11 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	profileRepo := repository.NewProfileRepository(sqlDB)
 	profileSvc := service.NewProfileService(profileRepo)
 
+	reportRepo := repository.NewReportRepository(sqlDB)
+	reportCmdSvc := service.NewReportCommandService(reportRepo, store)
+
 	eventHandler := handler.NewEventHandler(eventQuerySvc, eventCmdSvc, profileSvc)
+	reportHandler := handler.NewReportHandler(reportCmdSvc, profileSvc)
 
 	v1Public := r.Group("/api/v1")
 	v1Public.GET("/events", eventHandler.List)
@@ -87,6 +91,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	v1.Use(verifier.RequireAuth())
 	v1.GET("/me", userHandler.GetMe)
 	v1.POST("/events", eventHandler.Create)
+	v1.POST("/reports", reportHandler.Create)
 
 	// R2 設定がある場合のみ upload ルートを登録する（JWKS gating と同じ方針）。
 	if store != nil {
