@@ -66,9 +66,6 @@ func (r *profilePostgres) Upsert(ctx context.Context, p *model.Profile) error {
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (id) DO UPDATE SET
 			email        = EXCLUDED.email,
-			display_name = EXCLUDED.display_name,
-			avatar_url   = EXCLUDED.avatar_url,
-			description  = EXCLUDED.description,
 			updated_at   = now()
 		RETURNING id, email, display_name, avatar_url, description, created_at, updated_at`
 

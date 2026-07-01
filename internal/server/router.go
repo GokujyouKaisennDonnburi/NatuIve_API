@@ -70,6 +70,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	reportCmdSvc := service.NewReportCommandService(reportRepo, eventRepo, store)
 
 	eventHandler := handler.NewEventHandler(eventQuerySvc, eventCmdSvc, profileSvc)
+	userHandler := handler.NewUserHandler(profileSvc)
 	reportHandler := handler.NewReportHandler(reportCmdSvc)
 
 	v1Public := r.Group("/api/v1")
@@ -77,6 +78,8 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 
 	// events/{id} は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
 	v1Public.GET("/events/:id", eventHandler.GetByID)
+
+	v1Public.GET("/profiles/:id", userHandler.GetProfile)
 
 	// user 系は認証が必要。DB と JWKS の両方が揃っているときのみ登録する。
 	if cfg.SupabaseJWKSURL == "" {
@@ -88,13 +91,10 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 		return err
 	}
 
-	userHandler := handler.NewUserHandler(profileSvc)
-
 	v1 := r.Group("/api/v1")
 	v1.Use(verifier.RequireAuth())
 	v1.GET("/me", userHandler.GetMe)
 	v1.POST("/events", eventHandler.Create)
-	v1.GET("/profiles/:id", userHandler.GetProfile)
 	v1.POST("/reports", reportHandler.Create)
 
 	// R2 設定がある場合のみ upload ルートを登録する（JWKS gating と同じ方針）。

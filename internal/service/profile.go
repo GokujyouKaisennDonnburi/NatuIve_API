@@ -40,7 +40,6 @@ func (s *ProfileService) GetOrCreate(ctx context.Context, u AuthenticatedUser) (
 		Email:       u.Email,
 		DisplayName: u.DisplayName,
 		AvatarURL:   u.AvatarURL,
-		Description: u.Description,
 	}
 	if err := s.repo.Upsert(ctx, p); err != nil {
 		return nil, err
