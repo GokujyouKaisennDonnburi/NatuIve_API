@@ -1129,10 +1129,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "イベントを楽しむのが好きです。"
                 },
                 "display_name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "なちゅいべ太郎"
                 }
             }
         },
