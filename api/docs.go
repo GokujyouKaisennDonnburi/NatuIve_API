@@ -163,6 +163,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/events/{id}/report": {
+            "get": {
+                "description": "指定したイベントIDに紐づくレポートを取得する。1イベント1レポート。認証不要。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "report"
+                ],
+                "summary": "レポート取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "イベントID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me": {
             "get": {
                 "security": [
@@ -189,6 +230,110 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profiles/{id}": {
+            "get": {
+                "description": "指定したユーザー ID のプロフィールを返す",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "ユーザープロフィール取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ユーザー ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfilePublic"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/reports": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "認証済みユーザーがイベントに対してレポートを投稿する。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "report"
+                ],
+                "summary": "レポート投稿",
+                "parameters": [
+                    {
+                        "description": "レポート投稿リクエスト",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ValidationErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorResponse"
                         }
                     },
                     "500": {
@@ -370,6 +515,64 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportRequest": {
+            "description": "レポート投稿に必要な情報。",
+            "type": "object",
+            "required": [
+                "content",
+                "eventId"
+            ],
+            "properties": {
+                "content": {
+                    "description": "Content はレポート内容（必須・10,000文字以内）。",
+                    "type": "string",
+                    "maxLength": 10000,
+                    "example": "多摩川アメリカザリガニ殲滅作戦の結果、参加者：5人、アメリカザリガニ防除数：138匹でした。"
+                },
+                "eventId": {
+                    "description": "EventID はレポート対象のイベントID（必須・255文字以内）。",
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "event_1234567890"
+                },
+                "externalUrls": {
+                    "description": "ExternalUrls は外部レポートの参照URL一覧（任意・各要素2048文字以内・http/https のみ）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "imageObjectKeys": {
+                    "description": "ImageObjectKeys は画像オブジェクトキーの一覧（任意）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfObjectKeys": {
+                    "description": "PdfObjectKeys はPDFオブジェクトキーの一覧（任意・各要素255文字以内）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt はレコード作成日時(RFC3339)。DB の TIMESTAMPTZ を UTC で保持する。",
+                    "type": "string",
+                    "example": "2026-06-26T03:08:24Z"
+                },
+                "reportId": {
+                    "description": "ReportID は作成されたレポートのID。",
+                    "type": "string",
+                    "example": "report_1234567890"
+                }
+            }
+        },
         "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorBody": {
             "type": "object",
             "properties": {
@@ -510,6 +713,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "imageUrls": {
+                    "description": "ImageUrls は ImageObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -520,6 +730,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pdfObjectKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfUrls": {
+                    "description": "PdfUrls は PdfObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -576,6 +793,29 @@ const docTemplate = `{
                     "description": "Title はイベントタイトル。",
                     "type": "string",
                     "example": "サクラ観察会"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Code は機械可読なエラーコード。",
+                    "type": "string",
+                    "example": "forbidden"
+                },
+                "message": {
+                    "description": "Message は人間向けのエラーメッセージ。",
+                    "type": "string",
+                    "example": "このイベントにレポートを投稿する権限がありません"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorBody"
                 }
             }
         },
@@ -657,6 +897,31 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfilePublic": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "description": "AvatarURL はアバター画像 URL(未設定なら空)。",
+                    "type": "string",
+                    "example": "https://example.com/avatar.png"
+                },
+                "description": {
+                    "description": "Description は自己紹介(未設定なら空)。",
+                    "type": "string",
+                    "example": "イベントを楽しむのが好きです。"
+                },
+                "displayName": {
+                    "description": "DisplayName は表示名(未設定なら空)。",
+                    "type": "string",
+                    "example": "なちゅいべ太郎"
+                },
+                "id": {
+                    "description": "ID は Supabase Auth のユーザー ID(UUID)。",
+                    "type": "string",
+                    "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                }
+            }
+        },
         "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileResponse": {
             "type": "object",
             "properties": {
@@ -669,6 +934,11 @@ const docTemplate = `{
                     "description": "CreatedAt はプロフィール作成日時(RFC3339)。",
                     "type": "string",
                     "example": "2026-06-22T12:00:00Z"
+                },
+                "description": {
+                    "description": "Description は自己紹介(未設定なら空)。",
+                    "type": "string",
+                    "example": "イベントを楽しむのが好きです。"
                 },
                 "displayName": {
                     "description": "DisplayName は表示名(未設定なら空)。",
@@ -709,6 +979,71 @@ const docTemplate = `{
                     "description": "ID は Supabase Auth のユーザー ID(UUID)。",
                     "type": "string",
                     "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content はレポート内容。",
+                    "type": "string",
+                    "example": "多摩川アメリカザリガニ殲滅作戦の結果、参加者：5人、防除数：138匹でした。"
+                },
+                "createdAt": {
+                    "description": "CreatedAt はレコード作成日時(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-06-26T03:08:24Z"
+                },
+                "eventId": {
+                    "description": "EventID は対象イベントのID(UUID)。",
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                },
+                "externalUrls": {
+                    "description": "ExternalUrls は外部レポートの参照URLの一覧。無ければ空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "description": "ID はレポートの一意識別子(UUID)。",
+                    "type": "string",
+                    "example": "b2c3d4e5-f6a7-8901-bcde-f23456789012"
+                },
+                "imageObjectKeys": {
+                    "description": "ImageObjectKeys は画像オブジェクトキーの一覧。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "imageUrls": {
+                    "description": "ImageUrls は ImageObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfObjectKeys": {
+                    "description": "PdfObjectKeys は PDF オブジェクトキーの一覧。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfUrls": {
+                    "description": "PdfUrls は PdfObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt はレコード更新日時(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-06-26T03:08:24Z"
                 }
             }
         },

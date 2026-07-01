@@ -33,6 +33,11 @@ type Config struct {
 	R2SecretAccessKey string
 	// R2Bucket は R2 バケット名。未設定なら "natuportal"。
 	R2Bucket string
+	// R2PublicBaseURL は公開バケット（R2 パブリックバケット/カスタムドメイン）の
+	// 配信ベースURL。設定するとイベント等のレスポンスに imageUrls/pdfUrls を含める。
+	// 末尾スラッシュは正規化されるため有無を問わない。未設定なら URL は付与しない。
+	// 例: https://media.natuportal.com
+	R2PublicBaseURL string
 }
 
 // Load は環境変数から Config を構築する。
@@ -65,5 +70,6 @@ func Load() Config {
 	if cfg.R2Bucket == "" {
 		cfg.R2Bucket = "natuportal"
 	}
+	cfg.R2PublicBaseURL = os.Getenv("R2_PUBLIC_BASE_URL")
 	return cfg
 }

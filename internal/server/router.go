@@ -26,10 +26,10 @@ func NewRouter(cfg config.Config, sqlDB *sql.DB) (*gin.Engine, error) {
 	
 	// gin.Default() の代わりに slog 連携のロガー/リカバリを使う。
 	r := gin.New()
-	r.Use(middleware.SlogLogger(), 
-		  middleware.SlogRecovery(),
-		  middleware.NewCORS()
-		)
+	r.Use(middleware.SlogLogger(),
+		middleware.SlogRecovery(),
+		middleware.NewCORS(),
+	)
 
 	// 信頼するプロキシを設定（nil = どのプロキシも信頼しない）。
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
@@ -60,34 +60,45 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	var store service.ObjectStore
 	if cfg.R2AccountID != "" {
 		store = storage.NewR2Client(
-			cfg.R2AccountID, 
-			cfg.R2AccessKeyID, 
-			cfg.R2SecretAccessKey, 
-			cfg.R2Bucket
+			cfg.R2AccountID,
+			cfg.R2AccessKeyID,
+			cfg.R2SecretAccessKey,
+			cfg.R2Bucket,
 		)
 	}
 
 	// events 一覧は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
 	eventRepo := repository.NewEventRepository(sqlDB)
-	eventQuerySvc := service.NewEventQueryService(eventRepo)
+	eventQuerySvc := service.NewEventQueryService(eventRepo, cfg.R2PublicBaseURL)
 	eventCmdSvc := service.NewEventCommandService(eventRepo, store)
 	eventJoinSvc := service.NewEventJoinService(eventRepo)
 
 	profileRepo := repository.NewProfileRepository(sqlDB)
 	profileSvc := service.NewProfileService(profileRepo)
 
+	reportRepo := repository.NewReportRepository(sqlDB)
+	reportCmdSvc := service.NewReportCommandService(reportRepo, eventRepo, store)
+	reportQuerySvc := service.NewReportQueryService(reportRepo, cfg.R2PublicBaseURL)
+
 	eventHandler := handler.NewEventHandler(
 		eventQuerySvc,
 		eventCmdSvc,
-		profileSvc, 
+		profileSvc,
 		eventJoinSvc,
 	)
+	userHandler := handler.NewUserHandler(profileSvc)
+	reportHandler := handler.NewReportHandler(reportCmdSvc, reportQuerySvc)
 
 	v1Public := r.Group("/api/v1")
 	v1Public.GET("/events", eventHandler.List)
 
 	// events/{id} は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
 	v1Public.GET("/events/:id", eventHandler.GetByID)
+
+	v1Public.GET("/profiles/:id", userHandler.GetProfile)
+
+	// events/{id}/report は公開エンドポイント（1イベント1レポート）。
+	v1Public.GET("/events/:id/report", reportHandler.GetByEventID)
 
 	// user 系は認証が必要。DB と JWKS の両方が揃っているときのみ登録する。
 	if cfg.SupabaseJWKSURL == "" {
@@ -99,8 +110,6 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 		return err
 	}
 
-	userHandler := handler.NewUserHandler(profileSvc)
-
 	v1 := r.Group("/api/v1")
 	
 	v1.Use(verifier.RequireAuth())
@@ -108,8 +117,9 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	v1.GET("/me", userHandler.GetMe)
 
 	v1.POST("/events", eventHandler.Create)
-	
+
 	v1.POST("/events/join", eventHandler.Join)
+	v1.POST("/reports", reportHandler.Create)
 
 	// R2 設定がある場合のみ upload ルートを登録する（JWKS gating と同じ方針）。
 	if store != nil {

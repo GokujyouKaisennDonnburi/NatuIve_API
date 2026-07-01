@@ -70,6 +70,49 @@ definitions:
         example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         type: string
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportRequest:
+    description: レポート投稿に必要な情報。
+    properties:
+      content:
+        description: Content はレポート内容（必須・10,000文字以内）。
+        example: 多摩川アメリカザリガニ殲滅作戦の結果、参加者：5人、アメリカザリガニ防除数：138匹でした。
+        maxLength: 10000
+        type: string
+      eventId:
+        description: EventID はレポート対象のイベントID（必須・255文字以内）。
+        example: event_1234567890
+        maxLength: 255
+        type: string
+      externalUrls:
+        description: ExternalUrls は外部レポートの参照URL一覧（任意・各要素2048文字以内・http/https のみ）。
+        items:
+          type: string
+        type: array
+      imageObjectKeys:
+        description: ImageObjectKeys は画像オブジェクトキーの一覧（任意）。
+        items:
+          type: string
+        type: array
+      pdfObjectKeys:
+        description: PdfObjectKeys はPDFオブジェクトキーの一覧（任意・各要素255文字以内）。
+        items:
+          type: string
+        type: array
+    required:
+    - content
+    - eventId
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportResponse:
+    properties:
+      createdAt:
+        description: CreatedAt はレコード作成日時(RFC3339)。DB の TIMESTAMPTZ を UTC で保持する。
+        example: "2026-06-26T03:08:24Z"
+        type: string
+      reportId:
+        description: ReportID は作成されたレポートのID。
+        example: report_1234567890
+        type: string
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorBody:
     properties:
       code:
@@ -167,6 +210,13 @@ definitions:
         items:
           type: string
         type: array
+      imageUrls:
+        description: |-
+          ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
       items:
         items:
           $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventItemResponse'
@@ -174,6 +224,13 @@ definitions:
       location:
         type: string
       pdfObjectKeys:
+        items:
+          type: string
+        type: array
+      pdfUrls:
+        description: |-
+          PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
         items:
           type: string
         type: array
@@ -214,6 +271,22 @@ definitions:
         description: Title はイベントタイトル。
         example: サクラ観察会
         type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorBody:
+    properties:
+      code:
+        description: Code は機械可読なエラーコード。
+        example: forbidden
+        type: string
+      message:
+        description: Message は人間向けのエラーメッセージ。
+        example: このイベントにレポートを投稿する権限がありません
+        type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorBody'
     type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.HealthResponse:
     properties:
@@ -276,6 +349,25 @@ definitions:
         example: https://xxxxx.r2.cloudflarestorage.com/natuportal/natueve/tmp/profile-uuid/uuid.jpg?X-Amz-...
         type: string
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfilePublic:
+    properties:
+      avatarUrl:
+        description: AvatarURL はアバター画像 URL(未設定なら空)。
+        example: https://example.com/avatar.png
+        type: string
+      description:
+        description: Description は自己紹介(未設定なら空)。
+        example: イベントを楽しむのが好きです。
+        type: string
+      displayName:
+        description: DisplayName は表示名(未設定なら空)。
+        example: なちゅいべ太郎
+        type: string
+      id:
+        description: ID は Supabase Auth のユーザー ID(UUID)。
+        example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        type: string
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileResponse:
     properties:
       avatarUrl:
@@ -285,6 +377,10 @@ definitions:
       createdAt:
         description: CreatedAt はプロフィール作成日時(RFC3339)。
         example: "2026-06-22T12:00:00Z"
+        type: string
+      description:
+        description: Description は自己紹介(未設定なら空)。
+        example: イベントを楽しむのが好きです。
         type: string
       displayName:
         description: DisplayName は表示名(未設定なら空)。
@@ -316,6 +412,58 @@ definitions:
       id:
         description: ID は Supabase Auth のユーザー ID(UUID)。
         example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        type: string
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse:
+    properties:
+      content:
+        description: Content はレポート内容。
+        example: 多摩川アメリカザリガニ殲滅作戦の結果、参加者：5人、防除数：138匹でした。
+        type: string
+      createdAt:
+        description: CreatedAt はレコード作成日時(RFC3339)。
+        example: "2026-06-26T03:08:24Z"
+        type: string
+      eventId:
+        description: EventID は対象イベントのID(UUID)。
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        type: string
+      externalUrls:
+        description: ExternalUrls は外部レポートの参照URLの一覧。無ければ空配列。
+        items:
+          type: string
+        type: array
+      id:
+        description: ID はレポートの一意識別子(UUID)。
+        example: b2c3d4e5-f6a7-8901-bcde-f23456789012
+        type: string
+      imageObjectKeys:
+        description: ImageObjectKeys は画像オブジェクトキーの一覧。
+        items:
+          type: string
+        type: array
+      imageUrls:
+        description: |-
+          ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
+      pdfObjectKeys:
+        description: PdfObjectKeys は PDF オブジェクトキーの一覧。
+        items:
+          type: string
+        type: array
+      pdfUrls:
+        description: |-
+          PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
+      updatedAt:
+        description: UpdatedAt はレコード更新日時(RFC3339)。
+        example: "2026-06-26T03:08:24Z"
         type: string
     type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorBody:
@@ -456,6 +604,33 @@ paths:
       summary: イベント詳細取得
       tags:
       - event
+  /api/v1/events/{id}/report:
+    get:
+      description: 指定したイベントIDに紐づくレポートを取得する。1イベント1レポート。認証不要。
+      parameters:
+      - description: イベントID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+      summary: レポート取得
+      tags:
+      - report
   /api/v1/me:
     get:
       description: 認証済みユーザー自身のプロフィールを返す(初回アクセス時に自動作成)
@@ -479,6 +654,73 @@ paths:
       summary: 本人プロフィール取得
       tags:
       - user
+  /api/v1/profiles/{id}:
+    get:
+      description: 指定したユーザー ID のプロフィールを返す
+      parameters:
+      - description: ユーザー ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfilePublic'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse'
+      summary: ユーザープロフィール取得
+      tags:
+      - user
+  /api/v1/reports:
+    post:
+      consumes:
+      - application/json
+      description: 認証済みユーザーがイベントに対してレポートを投稿する。
+      parameters:
+      - description: レポート投稿リクエスト
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.CreateReportResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ValidationErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ForbiddenErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: レポート投稿
+      tags:
+      - report
   /api/v1/uploads/presign:
     post:
       consumes:

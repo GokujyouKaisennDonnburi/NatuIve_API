@@ -10,6 +10,7 @@ type Profile struct {
 	Email       string
 	DisplayName string
 	AvatarURL   string
+	Description string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -24,10 +25,24 @@ type ProfileResponse struct {
 	DisplayName string `json:"displayName" example:"なちゅいべ太郎"`
 	// AvatarURL はアバター画像 URL(未設定なら空)。
 	AvatarURL string `json:"avatarUrl" example:"https://example.com/avatar.png"`
+	// Description は自己紹介(未設定なら空)。
+	Description string `json:"description" example:"イベントを楽しむのが好きです。"`
 	// CreatedAt はプロフィール作成日時(RFC3339)。
 	CreatedAt time.Time `json:"createdAt" example:"2026-06-22T12:00:00Z"`
 	// UpdatedAt はプロフィール更新日時(RFC3339)。
 	UpdatedAt time.Time `json:"updatedAt" example:"2026-06-22T12:00:00Z"`
+}
+
+// ProfilePublic はプロフィールの公開情報 DTO。
+type ProfilePublic struct {
+	// ID は Supabase Auth のユーザー ID(UUID)。
+	ID string `json:"id" example:"d290f1ee-6c54-4b01-90e6-d701748f0851"`
+	// DisplayName は表示名(未設定なら空)。
+	DisplayName string `json:"displayName" example:"なちゅいべ太郎"`
+	// AvatarURL はアバター画像 URL(未設定なら空)。
+	AvatarURL string `json:"avatarUrl" example:"https://example.com/avatar.png"`
+	// Description は自己紹介(未設定なら空)。
+	Description string `json:"description" example:"イベントを楽しむのが好きです。"`
 }
 
 // ProfileSummary はプロフィールのサマリー情報 DTO。
@@ -47,7 +62,18 @@ func NewProfileResponse(p *Profile) ProfileResponse {
 		Email:       p.Email,
 		DisplayName: p.DisplayName,
 		AvatarURL:   p.AvatarURL,
+		Description: p.Description,
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
+	}
+}
+
+// NewProfilePublic は Profile から ProfilePublic を組み立てる。
+func NewProfilePublic(p *Profile) ProfilePublic {
+	return ProfilePublic{
+		ID:          p.ID,
+		DisplayName: p.DisplayName,
+		AvatarURL:   p.AvatarURL,
+		Description: p.Description,
 	}
 }

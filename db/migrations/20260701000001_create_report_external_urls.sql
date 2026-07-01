@@ -1,9 +1,9 @@
 -- +goose Up
-CREATE TABLE reports_pdfs(
+CREATE TABLE report_external_urls(
     id UUID PRIMARY KEY,
     report_id UUID REFERENCES reports(id),
-    pdf_objectkey TEXT NOT NULL
+    external_url TEXT NOT NULL
 );
 
 -- +goose Down
-DROP TABLE reports_pdfs;
+DROP TABLE report_external_urls;
