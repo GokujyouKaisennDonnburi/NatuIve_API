@@ -43,6 +43,7 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 		Email:       authUser.Email,
 		DisplayName: authUser.DisplayName,
 		AvatarURL:   authUser.AvatarURL,
+		Description: authUser.Description,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, model.NewErrorResponse(
