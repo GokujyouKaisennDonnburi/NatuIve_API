@@ -19,7 +19,13 @@ type stubProfileRepository struct {
 }
 
 func (s *stubProfileRepository) GetByID(_ context.Context, _ string) (*model.Profile, error) {
-	return nil, errors.New("not used")
+	return &model.Profile{
+		ID:          "d290f1ee-6c54-4b01-90e6-d701748f0851",
+		Email:       "user@example.com",
+		DisplayName: "なちゅいべ太郎",
+		AvatarURL:   "https://example.com/a.png",
+		Description: "イベントを楽しむのが好きです。",
+	}, nil
 }
 
 func (s *stubProfileRepository) Upsert(_ context.Context, p *model.Profile) error {
