@@ -163,6 +163,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/events/{id}/report": {
+            "get": {
+                "description": "指定したイベントIDに紐づくレポートを取得する。1イベント1レポート。認証不要。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "report"
+                ],
+                "summary": "レポート取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "イベントID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me": {
             "get": {
                 "security": [
@@ -860,6 +901,64 @@ const docTemplate = `{
                     "description": "ID は Supabase Auth のユーザー ID(UUID)。",
                     "type": "string",
                     "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content はレポート内容。",
+                    "type": "string",
+                    "example": "多摩川アメリカザリガニ殲滅作戦の結果、参加者：5人、防除数：138匹でした。"
+                },
+                "createdAt": {
+                    "description": "CreatedAt はレコード作成日時(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-06-26T03:08:24Z"
+                },
+                "eventId": {
+                    "description": "EventID は対象イベントのID(UUID)。",
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                },
+                "id": {
+                    "description": "ID はレポートの一意識別子(UUID)。",
+                    "type": "string",
+                    "example": "b2c3d4e5-f6a7-8901-bcde-f23456789012"
+                },
+                "imageObjectKeys": {
+                    "description": "ImageObjectKeys は画像オブジェクトキーの一覧。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "imageUrls": {
+                    "description": "ImageUrls は ImageObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfObjectKeys": {
+                    "description": "PdfObjectKeys は PDF オブジェクトキーの一覧。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfUrls": {
+                    "description": "PdfUrls は PdfObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt はレコード更新日時(RFC3339)。",
+                    "type": "string",
+                    "example": "2026-06-26T03:08:24Z"
                 }
             }
         },
