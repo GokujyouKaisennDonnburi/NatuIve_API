@@ -76,8 +76,10 @@ func (r *profilePostgres) Upsert(ctx context.Context, p *model.Profile) error {
 		displayName sql.NullString
 		description sql.NullString
 	)
+	// description は NOT NULL DEFAULT '' のため、空文字を NULL 化せずそのまま渡す。
+	// nullString で NULL 化すると NOT NULL 制約違反になる（DEFAULT は値未指定時のみ適用）。
 	err := r.db.QueryRowContext(ctx, query,
-		p.ID, p.Email, nullString(p.DisplayName), nullString(p.AvatarURL), nullString(p.Description),
+		p.ID, p.Email, nullString(p.DisplayName), nullString(p.AvatarURL), p.Description,
 	).Scan(&p.ID, &p.Email, &displayName, &description, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("upsert profile: %w", err)
