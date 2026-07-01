@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +49,82 @@ func validReportRequest(eventID string) model.CreateReportRequest {
 	return model.CreateReportRequest{
 		EventID: eventID,
 		Content: "とても充実したイベントでした。参加して良かったです。",
+	}
+}
+
+func TestValidateCreateReportRequest_ExternalUrls(t *testing.T) {
+	tests := []struct {
+		name         string
+		externalURLs []string
+		wantErrMsg   string // 空文字なら正常系
+	}{
+		{
+			name:         "正常: ExternalUrls なし",
+			externalURLs: nil,
+		},
+		{
+			name:         "正常: https URL",
+			externalURLs: []string{"https://example.com/report"},
+		},
+		{
+			name:         "正常: http URL",
+			externalURLs: []string{"http://example.com/report"},
+		},
+		{
+			name:         "正常: 複数の有効 URL",
+			externalURLs: []string{"https://example.com/a", "https://other.org/b"},
+		},
+		{
+			name:         "異常: 空文字",
+			externalURLs: []string{""},
+			wantErrMsg:   "外部URL[0]が空です",
+		},
+		{
+			name:         "異常: trim 後に空文字",
+			externalURLs: []string{"   "},
+			wantErrMsg:   "外部URL[0]が空です",
+		},
+		{
+			name:         "異常: 不正スキーム (ftp)",
+			externalURLs: []string{"ftp://example.com/report"},
+			wantErrMsg:   "外部URL[0]はhttp/https形式で入力してください",
+		},
+		{
+			name:         "異常: スキームなし",
+			externalURLs: []string{"example.com/report"},
+			wantErrMsg:   "外部URL[0]はhttp/https形式で入力してください",
+		},
+		{
+			name:         "異常: 2048文字超過",
+			externalURLs: []string{"https://example.com/" + strings.Repeat("a", 2030)},
+			wantErrMsg:   "外部URL[0]は2048文字以内で入力してください",
+		},
+		{
+			name:         "異常: 2件目が不正",
+			externalURLs: []string{"https://example.com/ok", "not-a-url"},
+			wantErrMsg:   "外部URL[1]はhttp/https形式で入力してください",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := model.CreateReportRequest{
+				EventID:      "event-uuid-001",
+				Content:      "テスト内容です。充実したイベントでした。",
+				ExternalUrls: tt.externalURLs,
+			}
+			err := validateCreateReportRequest(req)
+			if tt.wantErrMsg == "" {
+				if err != nil {
+					t.Fatalf("エラーなしを期待したが got %v", err)
+				}
+				return
+			}
+			ve := assertValidationError(t, err)
+			if ve.Message != tt.wantErrMsg {
+				t.Errorf("エラーメッセージ: got %q, want %q", ve.Message, tt.wantErrMsg)
+			}
+		})
 	}
 }
 

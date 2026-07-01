@@ -83,6 +83,11 @@ definitions:
         example: event_1234567890
         maxLength: 255
         type: string
+      externalUrls:
+        description: ExternalUrls は外部レポートの参照URL一覧（任意・各要素2048文字以内・http/https のみ）。
+        items:
+          type: string
+        type: array
       imageObjectKeys:
         description: ImageObjectKeys は画像オブジェクトキーの一覧（任意）。
         items:
@@ -400,6 +405,11 @@ definitions:
         description: EventID は対象イベントのID(UUID)。
         example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         type: string
+      externalUrls:
+        description: ExternalUrls は外部レポートの参照URLの一覧。無ければ空配列。
+        items:
+          type: string
+        type: array
       id:
         description: ID はレポートの一意識別子(UUID)。
         example: b2c3d4e5-f6a7-8901-bcde-f23456789012

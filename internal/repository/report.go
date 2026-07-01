@@ -78,6 +78,19 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 		}
 	}
 
+	// 外部URLの関連テーブルに登録
+	if len(report.ExternalUrls) > 0 {
+		const insertExternalURL = `
+			INSERT INTO report_external_urls (id, report_id, external_url)
+			VALUES (gen_random_uuid(), $1, $2)
+		`
+		for _, externalURL := range report.ExternalUrls {
+			if _, err := tx.ExecContext(ctx, insertExternalURL, resp.ReportID, externalURL); err != nil {
+				return model.CreateReportResponse{}, fmt.Errorf("insert report external url: %w", err)
+			}
+		}
+	}
+
 	// トランザクションをコミット
 	if err := tx.Commit(); err != nil {
 		return model.CreateReportResponse{}, fmt.Errorf("commit transaction: %w", err)
@@ -99,6 +112,7 @@ func (r *reportPostgres) GetByEventID(ctx context.Context, eventID string) (*mod
 	// 初期化（JSON 安定化）。0 件でも null ではなく [] を返す。
 	rep.ImageObjectKeys = []string{}
 	rep.PdfObjectKeys = []string{}
+	rep.ExternalUrls = []string{}
 
 	if err := r.db.QueryRowContext(ctx, query, eventID).Scan(
 		&rep.ID,
@@ -154,6 +168,29 @@ func (r *reportPostgres) GetByEventID(ctx context.Context, eventID string) (*mod
 	}
 	if err := pdfRows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate report pdfs: %w", err)
+	}
+
+	// external_urls
+	const externalURLQuery = `
+		SELECT	external_url
+		FROM	report_external_urls
+		WHERE	report_id = $1`
+
+	externalURLRows, err := r.db.QueryContext(ctx, externalURLQuery, rep.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get report external urls: %w", err)
+	}
+	defer func() { _ = externalURLRows.Close() }()
+
+	for externalURLRows.Next() {
+		var u string
+		if err := externalURLRows.Scan(&u); err != nil {
+			return nil, fmt.Errorf("scan report external url: %w", err)
+		}
+		rep.ExternalUrls = append(rep.ExternalUrls, u)
+	}
+	if err := externalURLRows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate report external urls: %w", err)
 	}
 
 	return &rep, nil

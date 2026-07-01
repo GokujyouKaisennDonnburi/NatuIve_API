@@ -14,6 +14,8 @@ type CreateReportRequest struct {
 	ImageObjectKeys []string `json:"imageObjectKeys,omitempty" validate:"omitempty,dive"`
 	// PdfObjectKeys はPDFオブジェクトキーの一覧（任意・各要素255文字以内）。
 	PdfObjectKeys []string `json:"pdfObjectKeys,omitempty" validate:"omitempty,dive,max=255"`
+	// ExternalUrls は外部レポートの参照URL一覧（任意・各要素2048文字以内・http/https のみ）。
+	ExternalUrls []string `json:"externalUrls,omitempty" validate:"omitempty,dive"`
 }
 
 // NewReport は検証済みのレポートドメイン型。repository 層に渡す。
@@ -25,6 +27,7 @@ type NewReport struct {
 	Content         string
 	ImageObjectKeys []string
 	PdfObjectKeys   []string
+	ExternalUrls    []string
 }
 
 // CreateReportResponse はレポート投稿エンドポイントのレスポンス DTO。
@@ -55,6 +58,8 @@ type ReportResponse struct {
 	// PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
 	// 公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
 	PdfUrls []string `json:"pdfUrls"`
+	// ExternalUrls は外部レポートの参照URLの一覧。無ければ空配列。
+	ExternalUrls []string `json:"externalUrls"`
 	// CreatedAt はレコード作成日時(RFC3339)。
 	CreatedAt time.Time `json:"createdAt" example:"2026-06-26T03:08:24Z"`
 	// UpdatedAt はレコード更新日時(RFC3339)。
