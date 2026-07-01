@@ -11,8 +11,10 @@ import (
 // stubProfileRepository は ProfileRepository のテスト用スタブ。
 type stubProfileRepository struct {
 	upsertCalled bool
+	updateCalled bool
 	gotProfile   *model.Profile
 	upsertErr    error
+	updateErr    error
 
 	getProfile *model.Profile
 	getErr     error
@@ -29,6 +31,12 @@ func (s *stubProfileRepository) Upsert(_ context.Context, p *model.Profile) erro
 	s.upsertCalled = true
 	s.gotProfile = p
 	return s.upsertErr
+}
+
+func (s *stubProfileRepository) Update(_ context.Context, p *model.Profile) error {
+	s.updateCalled = true
+	s.gotProfile = p
+	return s.updateErr
 }
 
 func TestProfileServiceGetOrCreate(t *testing.T) {
@@ -88,7 +96,7 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 		name      string
 		req       model.UpdateProfileRequest
 		getErr    error
-		upsertErr error
+		updateErr error
 		wantErr   bool
 	}{
 		{
@@ -110,8 +118,8 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:      "異常: Upsertエラー",
-			upsertErr: errors.New("db error"),
+			name:      "異常: Updateエラー",
+			updateErr: errors.New("db error"),
 			wantErr:   true,
 		},
 	}
@@ -121,7 +129,7 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 			repo := &stubProfileRepository{
 				getProfile: base,
 				getErr:     tt.getErr,
-				upsertErr:  tt.upsertErr,
+				updateErr:  tt.updateErr,
 			}
 
 			svc := NewProfileService(repo)
@@ -142,8 +150,8 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 				t.Fatalf("予期しないエラーが発生しました: %v", err)
 			}
 
-			if !repo.upsertCalled {
-				t.Fatalf("Upsert が呼び出されていません")
+			if !repo.updateCalled {
+				t.Fatalf("Update が呼び出されていません")
 			}
 
 			if got == nil {

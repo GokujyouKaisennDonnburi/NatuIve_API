@@ -79,8 +79,8 @@ func (s *ProfileService) UpdateMyProfile(ctx context.Context, userID string, req
 		p.Description = req.Description
 	}
 
-	// DB更新（UpsertでもOKだが update専用がより綺麗）
-	if err := s.repo.Upsert(ctx, p); err != nil {
+	// DB更新は編集専用の Update を使う（Upsert は get-or-create 用で編集値を上書きしない）。
+	if err := s.repo.Update(ctx, p); err != nil {
 		return nil, err
 	}
 
