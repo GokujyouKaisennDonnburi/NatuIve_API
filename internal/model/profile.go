@@ -58,7 +58,6 @@ type ProfileSummary struct {
 // UpdateProfileRequest はプロフィール更新の入力 DTO。
 type UpdateProfileRequest struct {
 	DisplayName string `json:"display_name"`
-	AvatarURL   string `json:"avatar_url"`
 	Description string `json:"description"`
 }
 

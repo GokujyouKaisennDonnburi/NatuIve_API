@@ -19,13 +19,10 @@ type stubProfileRepository struct {
 }
 
 func (s *stubProfileRepository) GetByID(_ context.Context, _ string) (*model.Profile, error) {
-	return &model.Profile{
-		ID:          "d290f1ee-6c54-4b01-90e6-d701748f0851",
-		Email:       "user@example.com",
-		DisplayName: "なちゅいべ太郎",
-		AvatarURL:   "https://example.com/a.png",
-		Description: "イベントを楽しむのが好きです。",
-	}, nil
+	if s.getErr != nil {
+		return nil, s.getErr
+	}
+	return s.getProfile, nil
 }
 
 func (s *stubProfileRepository) Upsert(_ context.Context, p *model.Profile) error {
@@ -84,7 +81,6 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 		ID:          "user-1",
 		Email:       "user@example.com",
 		DisplayName: "old name",
-		AvatarURL:   "old.png",
 		Description: "old desc",
 	}
 
@@ -99,7 +95,6 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 			name: "正常: 全項目更新",
 			req: model.UpdateProfileRequest{
 				DisplayName: "new name",
-				AvatarURL:   "new.png",
 				Description: "new desc",
 			},
 		},
@@ -137,6 +132,9 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 				if err == nil {
 					t.Fatalf("エラーが発生することを期待しましたが、nil でした")
 				}
+				if got != nil {
+					t.Fatalf("エラー時は結果は nil の想定です")
+				}
 				return
 			}
 
@@ -153,8 +151,11 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 			}
 
 			// 更新確認
-			if tt.req.DisplayName != "" && got.DisplayName != tt.req.DisplayName {
+			if got.DisplayName != tt.req.DisplayName && tt.req.DisplayName != "" {
 				t.Errorf("DisplayName が一致しません")
+			}
+			if got.Description != tt.req.Description && tt.req.Description != "" {
+				t.Errorf("Description が一致しません")
 			}
 		})
 	}

@@ -75,9 +75,6 @@ func (s *ProfileService) UpdateMyProfile(ctx context.Context, userID string, req
 	if req.DisplayName != "" {
 		p.DisplayName = req.DisplayName
 	}
-	if req.AvatarURL != "" {
-		p.AvatarURL = req.AvatarURL
-	}
 	if req.Description != "" {
 		p.Description = req.Description
 	}
