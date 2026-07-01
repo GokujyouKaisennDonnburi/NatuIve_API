@@ -74,17 +74,15 @@ func (r *profilePostgres) Upsert(ctx context.Context, p *model.Profile) error {
 
 	var (
 		displayName sql.NullString
-		avatarURL   sql.NullString
 		description sql.NullString
 	)
 	err := r.db.QueryRowContext(ctx, query,
 		p.ID, p.Email, nullString(p.DisplayName), nullString(p.AvatarURL), nullString(p.Description),
-	).Scan(&p.ID, &p.Email, &displayName, &avatarURL, &description, &p.CreatedAt, &p.UpdatedAt)
+	).Scan(&p.ID, &p.Email, &displayName, &description, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("upsert profile: %w", err)
 	}
 	p.DisplayName = displayName.String
-	p.AvatarURL = avatarURL.String
 	p.Description = description.String
 	return nil
 }

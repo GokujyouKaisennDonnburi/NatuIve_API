@@ -62,3 +62,27 @@ func (s *ProfileService) GetByID(ctx context.Context, id string) (*model.Profile
 	}
 	return p, nil
 }
+
+// UpdateMyProfile はプロフィール更新の入力 DTO。
+func (s *ProfileService) UpdateMyProfile(ctx context.Context, userID string, req model.UpdateProfileRequest) (*model.Profile, error) {
+	// まず現在のプロフィール取得
+	p, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 部分更新
+	if req.DisplayName != "" {
+		p.DisplayName = req.DisplayName
+	}
+	if req.Description != "" {
+		p.Description = req.Description
+	}
+
+	// DB更新（UpsertでもOKだが update専用がより綺麗）
+	if err := s.repo.Upsert(ctx, p); err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
