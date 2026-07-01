@@ -98,6 +98,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	v1 := r.Group("/api/v1")
 	v1.Use(verifier.RequireAuth())
 	v1.GET("/me", userHandler.GetMe)
+	v1.PATCH("/me", userHandler.UpdateMe)
 	v1.POST("/events", eventHandler.Create)
 	v1.POST("/reports", reportHandler.Create)
 
