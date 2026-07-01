@@ -3,7 +3,7 @@ package server
 
 import (
 	"database/sql"
-
+	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,13 +19,17 @@ import (
 )
 
 // NewRouter は設定と DB 接続をもとに Gin のルーターを構築して返す。
-//
 // sqlDB が nil、または SUPABASE_JWKS_URL が未設定の場合、認証が必要な
 // user 系ルートは登録しない(health などは常に有効)。
+
 func NewRouter(cfg config.Config, sqlDB *sql.DB) (*gin.Engine, error) {
+	
 	// gin.Default() の代わりに slog 連携のロガー/リカバリを使う。
 	r := gin.New()
-	r.Use(middleware.SlogLogger(), middleware.SlogRecovery(), middleware.NewCORS())
+	r.Use(middleware.SlogLogger(), 
+		  middleware.SlogRecovery(),
+		  middleware.NewCORS()
+		)
 
 	// 信頼するプロキシを設定（nil = どのプロキシも信頼しない）。
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
@@ -55,18 +59,29 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	// R2 設定があれば ObjectStore を生成する（nil 安全）。
 	var store service.ObjectStore
 	if cfg.R2AccountID != "" {
-		store = storage.NewR2Client(cfg.R2AccountID, cfg.R2AccessKeyID, cfg.R2SecretAccessKey, cfg.R2Bucket)
+		store = storage.NewR2Client(
+			cfg.R2AccountID, 
+			cfg.R2AccessKeyID, 
+			cfg.R2SecretAccessKey, 
+			cfg.R2Bucket
+		)
 	}
 
 	// events 一覧は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
 	eventRepo := repository.NewEventRepository(sqlDB)
 	eventQuerySvc := service.NewEventQueryService(eventRepo)
 	eventCmdSvc := service.NewEventCommandService(eventRepo, store)
+	eventJoinSvc := service.NewEventJoinService(eventRepo)
 
 	profileRepo := repository.NewProfileRepository(sqlDB)
 	profileSvc := service.NewProfileService(profileRepo)
 
-	eventHandler := handler.NewEventHandler(eventQuerySvc, eventCmdSvc, profileSvc)
+	eventHandler := handler.NewEventHandler(
+		eventQuerySvc,
+		eventCmdSvc,
+		profileSvc, 
+		eventJoinSvc,
+	)
 
 	v1Public := r.Group("/api/v1")
 	v1Public.GET("/events", eventHandler.List)
@@ -87,9 +102,14 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	userHandler := handler.NewUserHandler(profileSvc)
 
 	v1 := r.Group("/api/v1")
+	
 	v1.Use(verifier.RequireAuth())
+	
 	v1.GET("/me", userHandler.GetMe)
+
 	v1.POST("/events", eventHandler.Create)
+	
+	v1.POST("/events/join", eventHandler.Join)
 
 	// R2 設定がある場合のみ upload ルートを登録する（JWKS gating と同じ方針）。
 	if store != nil {
