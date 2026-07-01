@@ -13,6 +13,9 @@ type stubProfileRepository struct {
 	upsertCalled bool
 	gotProfile   *model.Profile
 	upsertErr    error
+
+	getProfile *model.Profile
+	getErr     error
 }
 
 func (s *stubProfileRepository) GetByID(_ context.Context, _ string) (*model.Profile, error) {
@@ -65,6 +68,87 @@ func TestProfileServiceGetOrCreate(t *testing.T) {
 			if got.ID != user.ID || got.Email != user.Email ||
 				got.DisplayName != user.DisplayName || got.AvatarURL != user.AvatarURL || got.Description != user.Description {
 				t.Errorf("返り値が入力と一致しない: got %+v, want %+v", got, user)
+			}
+		})
+	}
+}
+
+func TestProfileServiceUpdateMyProfile(t *testing.T) {
+	base := &model.Profile{
+		ID:          "user-1",
+		Email:       "user@example.com",
+		DisplayName: "old name",
+		AvatarURL:   "old.png",
+		Description: "old desc",
+	}
+
+	tests := []struct {
+		name      string
+		req       model.UpdateProfileRequest
+		getErr    error
+		upsertErr error
+		wantErr   bool
+	}{
+		{
+			name: "正常: 全項目更新",
+			req: model.UpdateProfileRequest{
+				DisplayName: "new name",
+				AvatarURL:   "new.png",
+				Description: "new desc",
+			},
+		},
+		{
+			name: "正常: 部分更新",
+			req: model.UpdateProfileRequest{
+				DisplayName: "new name",
+			},
+		},
+		{
+			name:    "異常: GetByIDエラー",
+			getErr:  errors.New("db error"),
+			wantErr: true,
+		},
+		{
+			name:      "異常: Upsertエラー",
+			upsertErr: errors.New("db error"),
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &stubProfileRepository{
+				getProfile: base,
+				getErr:     tt.getErr,
+				upsertErr:  tt.upsertErr,
+			}
+
+			svc := NewProfileService(repo)
+
+			got, err := svc.UpdateMyProfile(context.Background(), "user-1", tt.req)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("エラーが発生することを期待しましたが、nil でした")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("予期しないエラーが発生しました: %v", err)
+			}
+
+			if !repo.upsertCalled {
+				t.Fatalf("Upsert が呼び出されていません")
+			}
+
+			if got == nil {
+				t.Fatalf("結果が nil でした")
+			}
+
+			// 更新確認
+			if tt.req.DisplayName != "" && got.DisplayName != tt.req.DisplayName {
+				t.Errorf("DisplayName が一致しません")
 			}
 		})
 	}
