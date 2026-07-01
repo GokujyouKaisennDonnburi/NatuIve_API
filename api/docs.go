@@ -535,6 +535,13 @@ const docTemplate = `{
                     "maxLength": 255,
                     "example": "event_1234567890"
                 },
+                "externalUrls": {
+                    "description": "ExternalUrls は外部レポートの参照URL一覧（任意・各要素2048文字以内・http/https のみ）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imageObjectKeys": {
                     "description": "ImageObjectKeys は画像オブジェクトキーの一覧（任意）。",
                     "type": "array",
@@ -992,6 +999,13 @@ const docTemplate = `{
                     "description": "EventID は対象イベントのID(UUID)。",
                     "type": "string",
                     "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                },
+                "externalUrls": {
+                    "description": "ExternalUrls は外部レポートの参照URLの一覧。無ければ空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "id": {
                     "description": "ID はレポートの一意識別子(UUID)。",

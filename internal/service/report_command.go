@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strings"
 
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/model"
@@ -171,17 +172,38 @@ func validateCreateReportRequest(req model.CreateReportRequest) error {
 		}
 	}
 
+	// ExternalUrls（任意）: 各要素は空文字不可（trim 後）・http/https 形式・2048文字以内。
+	for i, u := range req.ExternalUrls {
+		v := strings.TrimSpace(u)
+		if v == "" {
+			return &ValidationError{Message: fmt.Sprintf("外部URL[%d]が空です", i)}
+		}
+		if len([]rune(v)) > 2048 {
+			return &ValidationError{Message: fmt.Sprintf("外部URL[%d]は2048文字以内で入力してください", i)}
+		}
+		parsed, err := url.Parse(v)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+			return &ValidationError{Message: fmt.Sprintf("外部URL[%d]はhttp/https形式で入力してください", i)}
+		}
+	}
+
 	return nil
 }
 
 // buildNewReport は検証済みリクエストから NewReport を組み立てる（文字列は trim 済み）。
 //
 // ImageObjectKeys / PdfObjectKeys は呼び出し元が昇格済みキーを渡す。
+// ExternalUrls は昇格不要のため req から直接 trim して詰める。
 func buildNewReport(req model.CreateReportRequest, finalImageKeys, finalPdfKeys []string) model.NewReport {
+	externalUrls := make([]string, 0, len(req.ExternalUrls))
+	for _, u := range req.ExternalUrls {
+		externalUrls = append(externalUrls, strings.TrimSpace(u))
+	}
 	return model.NewReport{
 		EventID:         strings.TrimSpace(req.EventID),
 		Content:         strings.TrimSpace(req.Content),
 		ImageObjectKeys: finalImageKeys,
 		PdfObjectKeys:   finalPdfKeys,
+		ExternalUrls:    externalUrls,
 	}
 }
