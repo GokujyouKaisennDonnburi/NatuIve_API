@@ -96,7 +96,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Security		BearerAuth
-//	@Param			request	body	UpdateProfileRequest	true	"更新内容"
+//	@Param			request	body	model.UpdateProfileRequest	true	"更新内容"
 //	@Success		200	{object}	model.ProfileResponse
 //	@Failure		400	{object}	model.ErrorResponse
 //	@Failure		401	{object}	model.UnauthorizedErrorResponse
