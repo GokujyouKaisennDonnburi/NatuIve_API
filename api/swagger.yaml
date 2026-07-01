@@ -205,6 +205,13 @@ definitions:
         items:
           type: string
         type: array
+      imageUrls:
+        description: |-
+          ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
       items:
         items:
           $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventItemResponse'
@@ -212,6 +219,13 @@ definitions:
       location:
         type: string
       pdfObjectKeys:
+        items:
+          type: string
+        type: array
+      pdfUrls:
+        description: |-
+          PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
         items:
           type: string
         type: array
@@ -395,6 +409,53 @@ definitions:
         example: d290f1ee-6c54-4b01-90e6-d701748f0851
         type: string
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse:
+    properties:
+      content:
+        description: Content はレポート内容。
+        example: 多摩川アメリカザリガニ殲滅作戦の結果、参加者：5人、防除数：138匹でした。
+        type: string
+      createdAt:
+        description: CreatedAt はレコード作成日時(RFC3339)。
+        example: "2026-06-26T03:08:24Z"
+        type: string
+      eventId:
+        description: EventID は対象イベントのID(UUID)。
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        type: string
+      id:
+        description: ID はレポートの一意識別子(UUID)。
+        example: b2c3d4e5-f6a7-8901-bcde-f23456789012
+        type: string
+      imageObjectKeys:
+        description: ImageObjectKeys は画像オブジェクトキーの一覧。
+        items:
+          type: string
+        type: array
+      imageUrls:
+        description: |-
+          ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
+      pdfObjectKeys:
+        description: PdfObjectKeys は PDF オブジェクトキーの一覧。
+        items:
+          type: string
+        type: array
+      pdfUrls:
+        description: |-
+          PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
+      updatedAt:
+        description: UpdatedAt はレコード更新日時(RFC3339)。
+        example: "2026-06-26T03:08:24Z"
+        type: string
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorBody:
     properties:
       code:
@@ -533,6 +594,33 @@ paths:
       summary: イベント詳細取得
       tags:
       - event
+  /api/v1/events/{id}/report:
+    get:
+      description: 指定したイベントIDに紐づくレポートを取得する。1イベント1レポート。認証不要。
+      parameters:
+      - description: イベントID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ReportResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+      summary: レポート取得
+      tags:
+      - report
   /api/v1/me:
     get:
       description: 認証済みユーザー自身のプロフィールを返す(初回アクセス時に自動作成)

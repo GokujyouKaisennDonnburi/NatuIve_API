@@ -60,7 +60,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 
 	// events 一覧は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
 	eventRepo := repository.NewEventRepository(sqlDB)
-	eventQuerySvc := service.NewEventQueryService(eventRepo)
+	eventQuerySvc := service.NewEventQueryService(eventRepo, cfg.R2PublicBaseURL)
 	eventCmdSvc := service.NewEventCommandService(eventRepo, store)
 
 	profileRepo := repository.NewProfileRepository(sqlDB)
@@ -68,10 +68,11 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 
 	reportRepo := repository.NewReportRepository(sqlDB)
 	reportCmdSvc := service.NewReportCommandService(reportRepo, eventRepo, store)
+	reportQuerySvc := service.NewReportQueryService(reportRepo, cfg.R2PublicBaseURL)
 
 	eventHandler := handler.NewEventHandler(eventQuerySvc, eventCmdSvc, profileSvc)
 	userHandler := handler.NewUserHandler(profileSvc)
-	reportHandler := handler.NewReportHandler(reportCmdSvc)
+	reportHandler := handler.NewReportHandler(reportCmdSvc, reportQuerySvc)
 
 	v1Public := r.Group("/api/v1")
 	v1Public.GET("/events", eventHandler.List)
@@ -80,6 +81,9 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	v1Public.GET("/events/:id", eventHandler.GetByID)
 
 	v1Public.GET("/profiles/:id", userHandler.GetProfile)
+
+	// events/{id}/report は公開エンドポイント（1イベント1レポート）。
+	v1Public.GET("/events/:id/report", reportHandler.GetByEventID)
 
 	// user 系は認証が必要。DB と JWKS の両方が揃っているときのみ登録する。
 	if cfg.SupabaseJWKSURL == "" {

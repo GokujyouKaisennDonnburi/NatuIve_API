@@ -28,11 +28,17 @@ const (
 // CQRS の Query 側として位置づけ、書き込み系とは分離する。
 type EventQueryService struct {
 	repo repository.EventRepository
+	urls PublicURLResolver
 }
 
 // NewEventQueryService は EventQueryService を生成する。
-func NewEventQueryService(repo repository.EventRepository) *EventQueryService {
-	return &EventQueryService{repo: repo}
+//
+// publicBaseURL は公開バケットの配信ベースURL（未設定なら URL を付与しない）。
+func NewEventQueryService(repo repository.EventRepository, publicBaseURL string) *EventQueryService {
+	return &EventQueryService{
+		repo: repo,
+		urls: NewPublicURLResolver(publicBaseURL),
+	}
 }
 
 // List は limit / offset / sort / order を正規化してからイベント一覧レスポンスを返す。
@@ -115,6 +121,11 @@ func (s *EventQueryService) GetByID(ctx context.Context, id string) (*model.Even
 		}
 		return nil, err
 	}
+
+	// 公開バケットの完全URLを付与する（ベースURL未設定なら空配列）。
+	// object_key は移行時の差し替え用途や本文インライン参照のために残す。
+	event.ImageUrls = s.urls.URLs(event.ImageObjectKeys)
+	event.PdfUrls = s.urls.URLs(event.PdfObjectKeys)
 
 	return event, nil
 }
