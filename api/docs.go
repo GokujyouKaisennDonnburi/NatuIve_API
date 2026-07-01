@@ -1128,9 +1128,6 @@ const docTemplate = `{
         "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UpdateProfileRequest": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
                 "description": {
                     "type": "string"
                 },

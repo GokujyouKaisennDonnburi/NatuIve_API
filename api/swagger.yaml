@@ -484,8 +484,6 @@ definitions:
     type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UpdateProfileRequest:
     properties:
-      avatar_url:
-        type: string
       description:
         type: string
       display_name:
