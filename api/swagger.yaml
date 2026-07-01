@@ -205,6 +205,13 @@ definitions:
         items:
           type: string
         type: array
+      imageUrls:
+        description: |-
+          ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
       items:
         items:
           $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.EventItemResponse'
@@ -212,6 +219,13 @@ definitions:
       location:
         type: string
       pdfObjectKeys:
+        items:
+          type: string
+        type: array
+      pdfUrls:
+        description: |-
+          PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
+          公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
         items:
           type: string
         type: array

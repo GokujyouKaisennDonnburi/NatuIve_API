@@ -113,8 +113,14 @@ type EventResponse struct {
 	Items           []EventItemResponse `json:"items"`
 	ImageObjectKeys []string            `json:"imageObjectKeys"`
 	PdfObjectKeys   []string            `json:"pdfObjectKeys"`
-	CreatedAt       time.Time           `json:"createdAt"`
-	UpdatedAt       time.Time           `json:"updatedAt"`
+	// ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
+	// 公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+	ImageUrls []string `json:"imageUrls"`
+	// PdfUrls は PdfObjectKeys に対応する表示用の完全URL。
+	// 公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+	PdfUrls   []string  `json:"pdfUrls"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // EventCostResponse はイベント費用のレスポンス DTO。

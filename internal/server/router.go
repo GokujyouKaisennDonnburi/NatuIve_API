@@ -60,7 +60,7 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 
 	// events 一覧は公開エンドポイント。DB があれば JWKS の有無に関わらず登録する。
 	eventRepo := repository.NewEventRepository(sqlDB)
-	eventQuerySvc := service.NewEventQueryService(eventRepo)
+	eventQuerySvc := service.NewEventQueryService(eventRepo, cfg.R2PublicBaseURL)
 	eventCmdSvc := service.NewEventCommandService(eventRepo, store)
 
 	profileRepo := repository.NewProfileRepository(sqlDB)
