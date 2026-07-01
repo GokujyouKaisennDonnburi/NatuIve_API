@@ -17,6 +17,15 @@ func nullInt32(n int) sql.NullInt32 {
 	return sql.NullInt32{Int32: int32(n), Valid: true} //nolint:gosec
 }
 
+// filenameAt は names[i] を返す。範囲外なら空文字を返す（ファイル名は任意のため）。
+// 画像・PDF のオブジェクトキーと元ファイル名を同順で対応付ける際に使う。
+func filenameAt(names []string, i int) string {
+	if i >= 0 && i < len(names) {
+		return names[i]
+	}
+	return ""
+}
+
 // EventRepository は events テーブルへのアクセスを抽象化する。
 type EventRepository interface {
 	// ListSummaries は指定されたソート順でイベントサマリーを取得する。
@@ -199,24 +208,24 @@ func (r *eventPostgres) Create(ctx context.Context, e *model.NewEvent) (model.Cr
 		}
 	}
 
-	// event_images テーブルへ INSERT する。
+	// event_images テーブルへ INSERT する。filename は同順の要素（範囲外は空文字）。
 	const insertImage = `
-		INSERT INTO event_images (id, event_id, image_objectkey)
-		VALUES (gen_random_uuid(), $1, $2)`
+		INSERT INTO event_images (id, event_id, image_objectkey, filename)
+		VALUES (gen_random_uuid(), $1, $2, $3)`
 
-	for _, key := range e.ImageObjectKeys {
-		if _, err := tx.ExecContext(ctx, insertImage, resp.ID, key); err != nil {
+	for i, key := range e.ImageObjectKeys {
+		if _, err := tx.ExecContext(ctx, insertImage, resp.ID, key, filenameAt(e.ImageFilenames, i)); err != nil {
 			return model.CreateEventResponse{}, fmt.Errorf("insert event image: %w", err)
 		}
 	}
 
-	// event_pdfs テーブルへ INSERT する。
+	// event_pdfs テーブルへ INSERT する。filename は同順の要素（範囲外は空文字）。
 	const insertPDF = `
-		INSERT INTO event_pdfs (id, event_id, pdf_objectkey)
-		VALUES (gen_random_uuid(), $1, $2)`
+		INSERT INTO event_pdfs (id, event_id, pdf_objectkey, filename)
+		VALUES (gen_random_uuid(), $1, $2, $3)`
 
-	for _, key := range e.PdfObjectKeys {
-		if _, err := tx.ExecContext(ctx, insertPDF, resp.ID, key); err != nil {
+	for i, key := range e.PdfObjectKeys {
+		if _, err := tx.ExecContext(ctx, insertPDF, resp.ID, key, filenameAt(e.PdfFilenames, i)); err != nil {
 			return model.CreateEventResponse{}, fmt.Errorf("insert event pdf: %w", err)
 		}
 	}
@@ -268,6 +277,8 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 	e.Items = []model.EventItemResponse{}
 	e.ImageObjectKeys = []string{}
 	e.PdfObjectKeys = []string{}
+	e.ImageFilenames = []string{}
+	e.PdfFilenames = []string{}
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&e.ID,
@@ -358,9 +369,9 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 		e.Items = append(e.Items, i)
 	}
 
-	// images
+	// images（objectkey と filename を同順で取得する）
 	const imageQuery = `
-		SELECT 	image_objectkey
+		SELECT 	image_objectkey, filename
 		FROM 	event_images
 		WHERE 	event_id = $1`
 
@@ -373,16 +384,17 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 	}()
 
 	for imageRows.Next() {
-		var key string
-		if err := imageRows.Scan(&key); err != nil {
+		var key, filename string
+		if err := imageRows.Scan(&key, &filename); err != nil {
 			return nil, fmt.Errorf("scan image: %w", err)
 		}
 		e.ImageObjectKeys = append(e.ImageObjectKeys, key)
+		e.ImageFilenames = append(e.ImageFilenames, filename)
 	}
 
-	// pdfs
+	// pdfs（objectkey と filename を同順で取得する）
 	const pdfQuery = `
-		SELECT 	pdf_objectkey
+		SELECT 	pdf_objectkey, filename
 		FROM 	event_pdfs
 		WHERE 	event_id = $1`
 
@@ -395,11 +407,12 @@ func (r *eventPostgres) GetByID(ctx context.Context, id string) (*model.EventRes
 	}()
 
 	for pdfRows.Next() {
-		var key string
-		if err := pdfRows.Scan(&key); err != nil {
+		var key, filename string
+		if err := pdfRows.Scan(&key, &filename); err != nil {
 			return nil, fmt.Errorf("scan pdf: %w", err)
 		}
 		e.PdfObjectKeys = append(e.PdfObjectKeys, key)
+		e.PdfFilenames = append(e.PdfFilenames, filename)
 	}
 
 	return &e, nil

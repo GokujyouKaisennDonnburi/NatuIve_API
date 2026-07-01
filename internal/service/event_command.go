@@ -69,28 +69,28 @@ func (s *EventCommandService) Create(ctx context.Context, profileID string, req 
 	}
 
 	// 3. キー昇格処理（store が nil または キーなしなら skip）
-	var finalImageKeys []string
-	var finalPDFKeys []string
-	var promotedKeys []string // 補償削除用
-
+	var pm promotedMedia
 	if hasKeys && s.store != nil {
 		var err error
-		finalImageKeys, finalPDFKeys, promotedKeys, err = s.promoteObjects(ctx, profileID, req)
+		pm, err = promoteMedia(ctx, s.store, profileID, "events",
+			req.ImageObjectKeys, req.ImageFilenames, req.PdfObjectKeys, req.PdfFilenames)
 		if err != nil {
 			return model.CreateEventResponse{}, err
 		}
 	}
 
-	// 4. repo.Create に最終キーを渡す
+	// 4. repo.Create に最終キー・元ファイル名を渡す
 	e := buildNewEvent(profileID, req)
-	e.ImageObjectKeys = finalImageKeys
-	e.PdfObjectKeys = finalPDFKeys
+	e.ImageObjectKeys = pm.imageKeys
+	e.PdfObjectKeys = pm.pdfKeys
+	e.ImageFilenames = pm.imageNames
+	e.PdfFilenames = pm.pdfNames
 
 	resp, err := s.repo.Create(ctx, e)
 	if err != nil {
 		// 5. repo.Create 失敗時: 配置済みキーを best-effort Delete（補償）
-		if len(promotedKeys) > 0 && s.store != nil {
-			for _, key := range promotedKeys {
+		if len(pm.allKeys) > 0 && s.store != nil {
+			for _, key := range pm.allKeys {
 				if delErr := s.store.Delete(ctx, key); delErr != nil {
 					slog.Warn("補償削除に失敗しました", slog.String("key", key), slog.Any("error", delErr))
 				}
@@ -99,45 +99,6 @@ func (s *EventCommandService) Create(ctx context.Context, profileID string, req 
 		return model.CreateEventResponse{}, fmt.Errorf("create event: %w", err)
 	}
 	return resp, nil
-}
-
-// promoteObjects は tmp キーを検証し events/ 領域へ昇格させる。
-// 返値: finalImageKeys, finalPDFKeys, promotedKeys（補償削除用全キー）, error
-func (s *EventCommandService) promoteObjects(
-	ctx context.Context,
-	profileID string,
-	req model.CreateEventRequest,
-) (finalImageKeys, finalPDFKeys, promotedKeys []string, err error) {
-	for _, key := range req.ImageObjectKeys {
-		finalKey, e := promoteOneObject(ctx, s.store, profileID, key, true, func(ct string) string { return buildFinalKey("events", ct) })
-		if e != nil {
-			// 昇格失敗時: ここまでに昇格済みのキーを best-effort 削除してエラー返却
-			for _, pk := range promotedKeys {
-				if delErr := s.store.Delete(ctx, pk); delErr != nil {
-					slog.Warn("昇格失敗時の補償削除に失敗しました", slog.String("key", pk), slog.Any("error", delErr))
-				}
-			}
-			return nil, nil, nil, e
-		}
-		finalImageKeys = append(finalImageKeys, finalKey)
-		promotedKeys = append(promotedKeys, finalKey)
-	}
-
-	for _, key := range req.PdfObjectKeys {
-		finalKey, e := promoteOneObject(ctx, s.store, profileID, key, false, func(ct string) string { return buildFinalKey("events", ct) })
-		if e != nil {
-			for _, pk := range promotedKeys {
-				if delErr := s.store.Delete(ctx, pk); delErr != nil {
-					slog.Warn("昇格失敗時の補償削除に失敗しました", slog.String("key", pk), slog.Any("error", delErr))
-				}
-			}
-			return nil, nil, nil, e
-		}
-		finalPDFKeys = append(finalPDFKeys, finalKey)
-		promotedKeys = append(promotedKeys, finalKey)
-	}
-
-	return finalImageKeys, finalPDFKeys, promotedKeys, nil
 }
 
 // isSameContentTypeFamily は宣言 Content-Type と sniff した Content-Type が
@@ -251,6 +212,14 @@ func validateCreateEventRequest(req model.CreateEventRequest) error {
 		if len([]rune(v)) > 255 {
 			return &ValidationError{Message: fmt.Sprintf("PDFオブジェクトキー[%d]は255文字以内で入力してください", i)}
 		}
+	}
+
+	// ImageFilenames / PdfFilenames（任意）: 指定時は対応するキー配列と同数。
+	if len(req.ImageFilenames) > 0 && len(req.ImageFilenames) != len(req.ImageObjectKeys) {
+		return &ValidationError{Message: "画像ファイル名の数が画像オブジェクトキーの数と一致しません"}
+	}
+	if len(req.PdfFilenames) > 0 && len(req.PdfFilenames) != len(req.PdfObjectKeys) {
+		return &ValidationError{Message: "PDFファイル名の数がPDFオブジェクトキーの数と一致しません"}
 	}
 
 	return nil

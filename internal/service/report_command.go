@@ -64,25 +64,23 @@ func (s *ReportCommandService) Create(ctx context.Context, profileID string, req
 	}
 
 	// キー昇格処理（store が nil または キーなしなら skip）
-	var finalImageKeys []string
-	var finalPdfKeys []string
-	var promotedKeys []string // 補償削除用
-
+	var pm promotedMedia
 	if hasKeys && s.store != nil {
 		var err error
-		finalImageKeys, finalPdfKeys, promotedKeys, err = s.promoteObjects(ctx, profileID, req)
+		pm, err = promoteMedia(ctx, s.store, profileID, "reports",
+			req.ImageObjectKeys, req.ImageFilenames, req.PdfObjectKeys, req.PdfFilenames)
 		if err != nil {
 			return model.CreateReportResponse{}, err
 		}
 	}
 
-	// repo.Create に最終キーを渡す
-	report := buildNewReport(req, finalImageKeys, finalPdfKeys)
+	// repo.Create に最終キー・元ファイル名を渡す
+	report := buildNewReport(req, pm)
 	resp, err := s.repo.Create(ctx, &report)
 	if err != nil {
 		// repo.Create 失敗時: 配置済みキーを best-effort Delete（補償）
-		if len(promotedKeys) > 0 && s.store != nil {
-			for _, key := range promotedKeys {
+		if len(pm.allKeys) > 0 && s.store != nil {
+			for _, key := range pm.allKeys {
 				if delErr := s.store.Delete(ctx, key); delErr != nil {
 					slog.Warn("補償削除に失敗しました", slog.String("key", key), slog.Any("error", delErr))
 				}
@@ -92,45 +90,6 @@ func (s *ReportCommandService) Create(ctx context.Context, profileID string, req
 	}
 
 	return resp, nil
-}
-
-// promoteObjects は tmp キーを検証し reports/ 領域へ昇格させる。
-// 返値: finalImageKeys, finalPdfKeys, promotedKeys（補償削除用全キー）, error
-func (s *ReportCommandService) promoteObjects(
-	ctx context.Context,
-	profileID string,
-	req model.CreateReportRequest,
-) (finalImageKeys, finalPdfKeys, promotedKeys []string, err error) {
-	for _, key := range req.ImageObjectKeys {
-		finalKey, e := promoteOneObject(ctx, s.store, profileID, key, true, func(ct string) string { return buildFinalKey("reports", ct) })
-		if e != nil {
-			// 昇格失敗時: ここまでに昇格済みのキーを best-effort 削除してエラー返却
-			for _, pk := range promotedKeys {
-				if delErr := s.store.Delete(ctx, pk); delErr != nil {
-					slog.Warn("昇格失敗時の補償削除に失敗しました", slog.String("key", pk), slog.Any("error", delErr))
-				}
-			}
-			return nil, nil, nil, e
-		}
-		finalImageKeys = append(finalImageKeys, finalKey)
-		promotedKeys = append(promotedKeys, finalKey)
-	}
-
-	for _, key := range req.PdfObjectKeys {
-		finalKey, e := promoteOneObject(ctx, s.store, profileID, key, false, func(ct string) string { return buildFinalKey("reports", ct) })
-		if e != nil {
-			for _, pk := range promotedKeys {
-				if delErr := s.store.Delete(ctx, pk); delErr != nil {
-					slog.Warn("昇格失敗時の補償削除に失敗しました", slog.String("key", pk), slog.Any("error", delErr))
-				}
-			}
-			return nil, nil, nil, e
-		}
-		finalPdfKeys = append(finalPdfKeys, finalKey)
-		promotedKeys = append(promotedKeys, finalKey)
-	}
-
-	return finalImageKeys, finalPdfKeys, promotedKeys, nil
 }
 
 // validateCreateReportRequest はリクエストの各フィールドを検証する。
@@ -172,6 +131,14 @@ func validateCreateReportRequest(req model.CreateReportRequest) error {
 		}
 	}
 
+	// ImageFilenames / PdfFilenames（任意）: 指定時は対応するキー配列と同数。
+	if len(req.ImageFilenames) > 0 && len(req.ImageFilenames) != len(req.ImageObjectKeys) {
+		return &ValidationError{Message: "画像ファイル名の数が画像オブジェクトキーの数と一致しません"}
+	}
+	if len(req.PdfFilenames) > 0 && len(req.PdfFilenames) != len(req.PdfObjectKeys) {
+		return &ValidationError{Message: "PDFファイル名の数がPDFオブジェクトキーの数と一致しません"}
+	}
+
 	// ExternalUrls（任意）: 各要素は空文字不可（trim 後）・http/https 形式・2048文字以内。
 	for i, u := range req.ExternalUrls {
 		v := strings.TrimSpace(u)
@@ -192,9 +159,9 @@ func validateCreateReportRequest(req model.CreateReportRequest) error {
 
 // buildNewReport は検証済みリクエストから NewReport を組み立てる（文字列は trim 済み）。
 //
-// ImageObjectKeys / PdfObjectKeys は呼び出し元が昇格済みキーを渡す。
+// 昇格済みの最終キー・元ファイル名は promotedMedia から受け取る。
 // ExternalUrls は昇格不要のため req から直接 trim して詰める。
-func buildNewReport(req model.CreateReportRequest, finalImageKeys, finalPdfKeys []string) model.NewReport {
+func buildNewReport(req model.CreateReportRequest, pm promotedMedia) model.NewReport {
 	externalUrls := make([]string, 0, len(req.ExternalUrls))
 	for _, u := range req.ExternalUrls {
 		externalUrls = append(externalUrls, strings.TrimSpace(u))
@@ -202,8 +169,10 @@ func buildNewReport(req model.CreateReportRequest, finalImageKeys, finalPdfKeys 
 	return model.NewReport{
 		EventID:         strings.TrimSpace(req.EventID),
 		Content:         strings.TrimSpace(req.Content),
-		ImageObjectKeys: finalImageKeys,
-		PdfObjectKeys:   finalPdfKeys,
+		ImageObjectKeys: pm.imageKeys,
+		PdfObjectKeys:   pm.pdfKeys,
+		ImageFilenames:  pm.imageNames,
+		PdfFilenames:    pm.pdfNames,
 		ExternalUrls:    externalUrls,
 	}
 }

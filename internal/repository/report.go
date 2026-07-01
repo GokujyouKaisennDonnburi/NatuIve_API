@@ -52,27 +52,27 @@ func (r *reportPostgres) Create(ctx context.Context, report *model.NewReport) (m
 		return model.CreateReportResponse{}, fmt.Errorf("insert report: %w", err)
 	}
 
-	// 画像・PDFの関連テーブルに登録
+	// 画像・PDFの関連テーブルに登録。filename は同順の要素（範囲外は空文字）。
 	if len(report.ImageObjectKeys) > 0 {
 		const insertImage = `
-			INSERT INTO report_images (id, report_id, image_objectkey)
-			VALUES (gen_random_uuid(), $1, $2)
+			INSERT INTO report_images (id, report_id, image_objectkey, filename)
+			VALUES (gen_random_uuid(), $1, $2, $3)
 		`
-		for _, objectKey := range report.ImageObjectKeys {
-			if _, err := tx.ExecContext(ctx, insertImage, resp.ReportID, objectKey); err != nil {
+		for i, objectKey := range report.ImageObjectKeys {
+			if _, err := tx.ExecContext(ctx, insertImage, resp.ReportID, objectKey, filenameAt(report.ImageFilenames, i)); err != nil {
 				return model.CreateReportResponse{}, fmt.Errorf("insert report image: %w", err)
 			}
 		}
 	}
 
-	// PDFの関連テーブルに登録
+	// PDFの関連テーブルに登録。filename は同順の要素（範囲外は空文字）。
 	if len(report.PdfObjectKeys) > 0 {
 		const insertPDF = `
-			INSERT INTO report_pdfs (id, report_id, pdf_objectkey)
-			VALUES (gen_random_uuid(), $1, $2)
+			INSERT INTO report_pdfs (id, report_id, pdf_objectkey, filename)
+			VALUES (gen_random_uuid(), $1, $2, $3)
 		`
-		for _, objectKey := range report.PdfObjectKeys {
-			if _, err := tx.ExecContext(ctx, insertPDF, resp.ReportID, objectKey); err != nil {
+		for i, objectKey := range report.PdfObjectKeys {
+			if _, err := tx.ExecContext(ctx, insertPDF, resp.ReportID, objectKey, filenameAt(report.PdfFilenames, i)); err != nil {
 				return model.CreateReportResponse{}, fmt.Errorf("insert report pdf: %w", err)
 			}
 		}
@@ -112,6 +112,8 @@ func (r *reportPostgres) GetByEventID(ctx context.Context, eventID string) (*mod
 	// 初期化（JSON 安定化）。0 件でも null ではなく [] を返す。
 	rep.ImageObjectKeys = []string{}
 	rep.PdfObjectKeys = []string{}
+	rep.ImageFilenames = []string{}
+	rep.PdfFilenames = []string{}
 	rep.ExternalUrls = []string{}
 
 	if err := r.db.QueryRowContext(ctx, query, eventID).Scan(
@@ -124,9 +126,9 @@ func (r *reportPostgres) GetByEventID(ctx context.Context, eventID string) (*mod
 		return nil, fmt.Errorf("get report by event id: %w", err)
 	}
 
-	// images
+	// images（objectkey と filename を同順で取得する）
 	const imageQuery = `
-		SELECT	image_objectkey
+		SELECT	image_objectkey, filename
 		FROM	report_images
 		WHERE	report_id = $1`
 
@@ -137,19 +139,20 @@ func (r *reportPostgres) GetByEventID(ctx context.Context, eventID string) (*mod
 	defer func() { _ = imageRows.Close() }()
 
 	for imageRows.Next() {
-		var key string
-		if err := imageRows.Scan(&key); err != nil {
+		var key, filename string
+		if err := imageRows.Scan(&key, &filename); err != nil {
 			return nil, fmt.Errorf("scan report image: %w", err)
 		}
 		rep.ImageObjectKeys = append(rep.ImageObjectKeys, key)
+		rep.ImageFilenames = append(rep.ImageFilenames, filename)
 	}
 	if err := imageRows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate report images: %w", err)
 	}
 
-	// pdfs
+	// pdfs（objectkey と filename を同順で取得する）
 	const pdfQuery = `
-		SELECT	pdf_objectkey
+		SELECT	pdf_objectkey, filename
 		FROM	report_pdfs
 		WHERE	report_id = $1`
 
@@ -160,11 +163,12 @@ func (r *reportPostgres) GetByEventID(ctx context.Context, eventID string) (*mod
 	defer func() { _ = pdfRows.Close() }()
 
 	for pdfRows.Next() {
-		var key string
-		if err := pdfRows.Scan(&key); err != nil {
+		var key, filename string
+		if err := pdfRows.Scan(&key, &filename); err != nil {
 			return nil, fmt.Errorf("scan report pdf: %w", err)
 		}
 		rep.PdfObjectKeys = append(rep.PdfObjectKeys, key)
+		rep.PdfFilenames = append(rep.PdfFilenames, filename)
 	}
 	if err := pdfRows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate report pdfs: %w", err)
