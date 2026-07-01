@@ -128,16 +128,6 @@ func stringClaim(m map[string]any, key string) string {
 	return s
 }
 
-// firstNonEmpty は最初の空でない文字列を返す。
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
-}
-
 // abortUnauthorized は統一フォーマットで 401 を返して処理を中断する。
 func abortUnauthorized(c *gin.Context, message string) {
 	c.AbortWithStatusJSON(http.StatusUnauthorized, model.NewErrorResponse("unauthorized", message))
