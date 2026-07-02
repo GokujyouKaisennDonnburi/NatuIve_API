@@ -520,6 +520,13 @@ const docTemplate = `{
                     "maxLength": 255,
                     "example": "https://example.com/event"
                 },
+                "imageFilenames": {
+                    "description": "ImageFilenames は画像の元ファイル名一覧（任意）。指定時は ImageObjectKeys と同数・同順。\nダウンロード時のファイル名（Content-Disposition）と UI 表示に使う。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imageObjectKeys": {
                     "description": "ImageObjectKeys は画像オブジェクトキーの一覧（任意）。",
                     "type": "array",
@@ -539,6 +546,13 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "example": "東京都新宿御苑"
+                },
+                "pdfFilenames": {
+                    "description": "PdfFilenames はPDFの元ファイル名一覧（任意）。指定時は PdfObjectKeys と同数・同順。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "pdfObjectKeys": {
                     "description": "PdfObjectKeys はPDFオブジェクトキーの一覧（任意・各要素255文字以内）。",
@@ -597,8 +611,22 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "imageFilenames": {
+                    "description": "ImageFilenames は画像の元ファイル名一覧（任意）。指定時は ImageObjectKeys と同数・同順。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imageObjectKeys": {
                     "description": "ImageObjectKeys は画像オブジェクトキーの一覧（任意）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfFilenames": {
+                    "description": "PdfFilenames はPDFの元ファイル名一覧（任意）。指定時は PdfObjectKeys と同数・同順。",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -762,6 +790,13 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "imageFilenames": {
+                    "description": "ImageFilenames は ImageObjectKeys に対応する元ファイル名（未設定は空文字）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imageObjectKeys": {
                     "type": "array",
                     "items": {
@@ -783,6 +818,13 @@ const docTemplate = `{
                 },
                 "location": {
                     "type": "string"
+                },
+                "pdfFilenames": {
+                    "description": "PdfFilenames は PdfObjectKeys に対応する元ファイル名（未設定は空文字）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "pdfObjectKeys": {
                     "type": "array",
@@ -1067,6 +1109,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "b2c3d4e5-f6a7-8901-bcde-f23456789012"
                 },
+                "imageFilenames": {
+                    "description": "ImageFilenames は ImageObjectKeys に対応する元ファイル名（未設定は空文字）。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "imageObjectKeys": {
                     "description": "ImageObjectKeys は画像オブジェクトキーの一覧。",
                     "type": "array",
@@ -1076,6 +1125,13 @@ const docTemplate = `{
                 },
                 "imageUrls": {
                     "description": "ImageUrls は ImageObjectKeys に対応する表示用の完全URL。\n公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pdfFilenames": {
+                    "description": "PdfFilenames は PdfObjectKeys に対応する元ファイル名（未設定は空文字）。",
                     "type": "array",
                     "items": {
                         "type": "string"
