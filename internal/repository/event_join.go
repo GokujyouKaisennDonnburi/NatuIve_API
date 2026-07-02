@@ -18,8 +18,9 @@ type EventJoinRepository interface {
 	// ExistsEvent はイベントが存在するか確認する。
 	ExistsEvent(ctx context.Context, eventID uuid.UUID) (bool, error)
 
-	// ExistsMember はユーザーが既に参加済みか確認する。
-	ExistsMember(ctx context.Context, eventID, profileID uuid.UUID) (bool, error)
+	// ExistsMember は同一イベントに同じ mail_address、またはログイン時は同じ profile_id の
+	// 参加レコードが存在するか確認する。profileID が Invalid（匿名）の場合は mail_address のみで判定する。
+	ExistsMember(ctx context.Context, eventID uuid.UUID, profileID uuid.NullUUID, mailAddress string) (bool, error)
 
 	// CountMembers は現在の参加人数を取得する。
 	CountMembers(ctx context.Context, eventID uuid.UUID) (int, error)
@@ -72,11 +73,16 @@ func (r *eventJoinPostgres) ExistsEvent(
 	return exists, nil
 }
 
-// ExistsMember はユーザーが既に参加済みか確認する。
+// ExistsMember は同一イベントに同じ mail_address、またはログイン時は同じ profile_id の
+// 参加レコードが存在するか確認する。
+//
+// profileID が Invalid（匿名参加）の場合、SQL 上 $3 は NULL になるため
+// `profile_id = NULL` は常に NULL（false 相当）となり mail_address のみで重複判定される。
 func (r *eventJoinPostgres) ExistsMember(
 	ctx context.Context,
 	eventID uuid.UUID,
-	profileID uuid.UUID,
+	profileID uuid.NullUUID,
+	mailAddress string,
 ) (bool, error) {
 
 	const query = `
@@ -84,7 +90,10 @@ func (r *eventJoinPostgres) ExistsMember(
 		SELECT 1
 		FROM event_members
 		WHERE event_id = $1
-		AND profile_id = $2
+		AND (
+			mail_address = $2
+			OR profile_id = $3
+		)
 	)
 	`
 
@@ -94,6 +103,7 @@ func (r *eventJoinPostgres) ExistsMember(
 		ctx,
 		query,
 		eventID,
+		mailAddress,
 		profileID,
 	).Scan(&exists)
 
@@ -164,6 +174,7 @@ func (r *eventJoinPostgres) GetCapacity(
 }
 
 // Join はイベント参加を登録する。INSERT 後に RETURNING created_at で member.CreatedAt を埋める。
+// member.ProfileID が Invalid（匿名参加）の場合は NULL として保存される。
 func (r *eventJoinPostgres) Join(
 	ctx context.Context,
 	member *model.EventMember,

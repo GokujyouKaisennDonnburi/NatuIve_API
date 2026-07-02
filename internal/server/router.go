@@ -101,7 +101,9 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	v1Public.GET("/events/:id/report", reportHandler.GetByEventID)
 
 	// user 系は認証が必要。DB と JWKS の両方が揃っているときのみ登録する。
+	// JWKS 未設定の場合: join ルートのみ認証なし（常に匿名参加）で登録して終了する。
 	if cfg.SupabaseJWKSURL == "" {
+		v1Public.POST("/events/:id/join", eventHandler.Join)
 		return nil
 	}
 
@@ -110,15 +112,18 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 		return err
 	}
 
-	v1 := r.Group("/api/v1")
+	// join は認証任意（OptionalAuth）: ログイン時のみ profileId を記録する。
+	v1Optional := r.Group("/api/v1")
+	v1Optional.Use(verifier.OptionalAuth())
+	v1Optional.POST("/events/:id/join", eventHandler.Join)
 
+	v1 := r.Group("/api/v1")
 	v1.Use(verifier.RequireAuth())
 
 	v1.GET("/me", userHandler.GetMe)
 	v1.PATCH("/me", userHandler.UpdateMe)
 	v1.POST("/events", eventHandler.Create)
 
-	v1.POST("/events/:id/join", eventHandler.Join)
 	v1.POST("/reports", reportHandler.Create)
 
 	// R2 設定がある場合のみ upload ルートを登録する（JWKS gating と同じ方針）。

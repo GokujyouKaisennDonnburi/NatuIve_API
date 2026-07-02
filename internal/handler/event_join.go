@@ -15,7 +15,10 @@ import (
 // Join はイベント参加申込 API。
 //
 //	@Summary		イベント参加
-//	@Description	ログイン中のユーザーがイベントへ参加する。
+//	@Description	認証は任意。ログイン時のみ profileId が記録される。
+//	@Description	Authorization ヘッダなし → 匿名参加（profileId = null）。
+//	@Description	ヘッダありでトークンが無効 → 401 で中断。
+//	@Description	ヘッダありで有効 → profileId を記録してログイン参加。
 //	@Tags			event
 //	@Accept			json
 //	@Produce		json
@@ -31,16 +34,6 @@ import (
 //	@Router			/api/v1/events/{id}/join [post]
 func (h *EventHandler) Join(c *gin.Context) {
 
-	// JWT認証情報取得
-	authUser, ok := middleware.AuthFromContext(c)
-	if !ok {
-		c.JSON(
-			http.StatusUnauthorized,
-			model.NewErrorResponse("unauthorized", "認証が必要です"),
-		)
-		return
-	}
-
 	// パスパラメータからイベントID取得
 	eventID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -51,14 +44,22 @@ func (h *EventHandler) Join(c *gin.Context) {
 		return
 	}
 
-	// JWTからプロフィールID取得
-	profileID, err := uuid.Parse(authUser.ID)
-	if err != nil {
-		c.JSON(
-			http.StatusUnauthorized,
-			model.NewErrorResponse("unauthorized", "ユーザーIDが不正です"),
-		)
-		return
+	// 認証情報の取得（任意）。
+	// OptionalAuth ミドルウェアにより:
+	//   - ヘッダなし → AuthFromContext は (_, false) を返す → 匿名参加
+	//   - ヘッダありで無効 → ミドルウェアが 401 で中断済みのためここには到達しない
+	//   - ヘッダありで有効 → (authUser, true)
+	var profileID uuid.NullUUID
+	if authUser, ok := middleware.AuthFromContext(c); ok {
+		parsed, parseErr := uuid.Parse(authUser.ID)
+		if parseErr != nil {
+			c.JSON(
+				http.StatusUnauthorized,
+				model.NewErrorResponse("unauthorized", "ユーザーIDが不正です"),
+			)
+			return
+		}
+		profileID = uuid.NullUUID{UUID: parsed, Valid: true}
 	}
 
 	// JSON受け取り

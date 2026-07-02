@@ -48,11 +48,12 @@ func NewEventJoinService(repo repository.EventJoinRepository) *EventJoinService 
 
 // Join はイベント参加処理を行う。
 //
+// profileID が Invalid（匿名参加）の場合は profile_id を NULL として登録する。
 // バリデーション → イベント存在確認 → 重複参加確認 → 定員確認 → 参加登録の順に処理する。
 func (s *EventJoinService) Join(
 	ctx context.Context,
 	eventID uuid.UUID,
-	profileID uuid.UUID,
+	profileID uuid.NullUUID,
 	req model.JoinEventRequest,
 ) (model.JoinEventResponse, error) {
 
@@ -60,6 +61,10 @@ func (s *EventJoinService) Join(
 	if err := validateJoinEventRequest(req); err != nil {
 		return model.JoinEventResponse{}, err
 	}
+
+	// バリデーション済みの値を使う
+	username := strings.TrimSpace(req.Username)
+	mailAddress := strings.TrimSpace(req.MailAddress)
 
 	// イベント存在確認
 	exists, err := s.repo.ExistsEvent(ctx, eventID)
@@ -70,8 +75,8 @@ func (s *EventJoinService) Join(
 		return model.JoinEventResponse{}, &NotFoundError{Message: "イベントが見つかりません"}
 	}
 
-	// 重複参加確認
-	joined, err := s.repo.ExistsMember(ctx, eventID, profileID)
+	// 重複参加確認（同一 mail_address またはログイン時は同一 profile_id）
+	joined, err := s.repo.ExistsMember(ctx, eventID, profileID, mailAddress)
 	if err != nil {
 		return model.JoinEventResponse{}, fmt.Errorf("exists member: %w", err)
 	}
@@ -100,17 +105,24 @@ func (s *EventJoinService) Join(
 	member := &model.EventMember{
 		EventID:     eventID,
 		ProfileID:   profileID,
-		Username:    strings.TrimSpace(req.Username),
-		MailAddress: strings.TrimSpace(req.MailAddress),
+		Username:    username,
+		MailAddress: mailAddress,
 	}
 
 	if err := s.repo.Join(ctx, member); err != nil {
 		return model.JoinEventResponse{}, fmt.Errorf("join event: %w", err)
 	}
 
+	// レスポンスの ProfileID: ログイン時のみ値を返す。匿名は nil（JSON: null）。
+	var respProfileID *uuid.UUID
+	if profileID.Valid {
+		v := profileID.UUID
+		respProfileID = &v
+	}
+
 	return model.JoinEventResponse{
 		EventID:     member.EventID,
-		ProfileID:   member.ProfileID,
+		ProfileID:   respProfileID,
 		Username:    member.Username,
 		MailAddress: member.MailAddress,
 		CreatedAt:   member.CreatedAt,
