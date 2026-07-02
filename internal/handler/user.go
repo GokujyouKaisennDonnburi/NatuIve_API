@@ -100,6 +100,7 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 //	@Success		200	{object}	model.ProfileResponse
 //	@Failure		400	{object}	model.ErrorResponse
 //	@Failure		401	{object}	model.UnauthorizedErrorResponse
+//	@Failure		404	{object}	model.ErrorResponse
 //	@Failure		500	{object}	model.InternalErrorResponse
 //	@Router			/api/v1/me [patch]
 func (h *UserHandler) UpdateMe(c *gin.Context) {
@@ -117,6 +118,15 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 
 	profile, err := h.svc.UpdateMyProfile(c.Request.Context(), authUser.ID, req)
 	if err != nil {
+		var ve *service.ValidationError
+		if errors.As(err, &ve) {
+			c.JSON(http.StatusBadRequest, model.NewErrorResponse("invalid_request", ve.Message))
+			return
+		}
+		if errors.Is(err, service.ErrProfileNotFound) {
+			c.JSON(http.StatusNotFound, model.NewErrorResponse("not_found", "プロフィールが見つかりません"))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, model.NewErrorResponse("internal_error", "更新に失敗しました"))
 		return
 	}

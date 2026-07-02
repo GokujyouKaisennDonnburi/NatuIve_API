@@ -162,10 +162,10 @@ func TestRequireAuth(t *testing.T) {
 				if gotUser.Email != "user@example.com" {
 					t.Errorf("Email = %q", gotUser.Email)
 				}
-				if gotUser.DisplayName != "" {
+				if gotUser.DisplayName != "なちゅいべ太郎" {
 					t.Errorf("DisplayName = %q", gotUser.DisplayName)
 				}
-				if gotUser.AvatarURL != "" {
+				if gotUser.AvatarURL != "https://example.com/a.png" {
 					t.Errorf("AvatarURL = %q", gotUser.AvatarURL)
 				}
 			}

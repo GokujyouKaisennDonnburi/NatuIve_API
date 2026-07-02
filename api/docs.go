@@ -363,6 +363,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1359,13 +1365,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "description": {
+                    "description": "Description は自己紹介。指定時は255文字以内（空文字でリセット可）。",
                     "type": "string",
-                    "maxLength": 255,
                     "example": "イベントを楽しむのが好きです。"
                 },
                 "display_name": {
+                    "description": "DisplayName は表示名。指定時は空不可・255文字以内（service で検証）。",
                     "type": "string",
-                    "maxLength": 255,
                     "example": "なちゅいべ太郎"
                 }
             }

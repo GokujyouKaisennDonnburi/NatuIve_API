@@ -3,10 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/model"
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/repository"
 )
+
+// maxProfileFieldLen はプロフィール文字列フィールドの最大長（rune 単位）。
+const maxProfileFieldLen = 255
 
 // AuthenticatedUser は認証済みユーザーの入力 DTO。
 //
@@ -63,7 +67,11 @@ func (s *ProfileService) GetByID(ctx context.Context, id string) (*model.Profile
 	return p, nil
 }
 
-// UpdateMyProfile はプロフィール更新の入力 DTO。
+// UpdateMyProfile は本人のプロフィールを部分更新する。
+//
+// req の各フィールドは nil なら変更せず、非 nil ならその値へ設定する。
+// これにより description は空文字へのリセットが可能。表示名は指定時に空不可。
+// 検証エラーは *ValidationError で返す（handler 層で 400 に変換）。
 func (s *ProfileService) UpdateMyProfile(ctx context.Context, userID string, req model.UpdateProfileRequest) (*model.Profile, error) {
 	// まず現在のプロフィール取得
 	p, err := s.repo.GetByID(ctx, userID)
@@ -71,16 +79,27 @@ func (s *ProfileService) UpdateMyProfile(ctx context.Context, userID string, req
 		return nil, err
 	}
 
-	// 部分更新
-	if req.DisplayName != "" {
-		p.DisplayName = req.DisplayName
+	// 部分更新（nil=未指定なので触らない）。値は trim して検証する。
+	if req.DisplayName != nil {
+		name := strings.TrimSpace(*req.DisplayName)
+		if name == "" {
+			return nil, &ValidationError{Message: "表示名は空にできません"}
+		}
+		if len([]rune(name)) > maxProfileFieldLen {
+			return nil, &ValidationError{Message: "表示名は255文字以内で入力してください"}
+		}
+		p.DisplayName = name
 	}
-	if req.Description != "" {
-		p.Description = req.Description
+	if req.Description != nil {
+		desc := strings.TrimSpace(*req.Description)
+		if len([]rune(desc)) > maxProfileFieldLen {
+			return nil, &ValidationError{Message: "自己紹介は255文字以内で入力してください"}
+		}
+		p.Description = desc
 	}
 
-	// DB更新（UpsertでもOKだが update専用がより綺麗）
-	if err := s.repo.Upsert(ctx, p); err != nil {
+	// DB更新は編集専用の Update を使う（Upsert は get-or-create 用で編集値を上書きしない）。
+	if err := s.repo.Update(ctx, p); err != nil {
 		return nil, err
 	}
 
