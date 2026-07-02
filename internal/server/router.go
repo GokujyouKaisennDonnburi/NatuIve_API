@@ -26,10 +26,10 @@ func NewRouter(cfg config.Config, sqlDB *sql.DB) (*gin.Engine, error) {
 	
 	// gin.Default() の代わりに slog 連携のロガー/リカバリを使う。
 	r := gin.New()
-	r.Use(middleware.SlogLogger(),
-		middleware.SlogRecovery(),
-		middleware.NewCORS(),
-	)
+	r.Use(middleware.SlogLogger(), 
+		  middleware.SlogRecovery(),
+		  middleware.NewCORS(),
+		)
 
 	// 信頼するプロキシを設定（nil = どのプロキシも信頼しない）。
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
@@ -60,9 +60,9 @@ func registerRoutes(r *gin.Engine, cfg config.Config, sqlDB *sql.DB) error {
 	var store service.ObjectStore
 	if cfg.R2AccountID != "" {
 		store = storage.NewR2Client(
-			cfg.R2AccountID,
-			cfg.R2AccessKeyID,
-			cfg.R2SecretAccessKey,
+			cfg.R2AccountID, 
+			cfg.R2AccessKeyID, 
+			cfg.R2SecretAccessKey, 
 			cfg.R2Bucket,
 		)
 	}

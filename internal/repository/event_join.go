@@ -187,10 +187,10 @@ func (r *eventJoinPostgres) Join(
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		member.Event_id,
-		member.Profile_id,
-		member.Username,
-		member.Mail_address,
+		member.event_id,
+		member.profile_id,
+		member.username,
+		member.mail_address,
 	)
 
 	if err != nil {
