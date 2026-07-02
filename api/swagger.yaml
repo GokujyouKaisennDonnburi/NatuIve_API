@@ -311,6 +311,55 @@ definitions:
       error:
         $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorBody'
     type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventRequest:
+    properties:
+      eventId:
+        description: EventID は参加したいイベントのUUID
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        maxLength: 255
+        type: string
+      mailAddress:
+        description: MailAddressは参加するユーザーのメールアドレス(必須)
+        example: yamada@example.com
+        maxLength: 255
+        type: string
+      profileId:
+        description: ProfileID は参加するユーザーのUUID(あれば)
+        example: b2c3d4e5-f6a7-8901-bcde-f23456789012
+        type: string
+      username:
+        description: Usenameは参加するユーザーの表示名(必須)
+        example: 山田太郎
+        maxLength: 255
+        type: string
+    required:
+    - eventId
+    - mailAddress
+    - username
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventResponse:
+    properties:
+      createdAt:
+        description: CreatedAt は参加申込日時
+        example: "2023-01-01T12:00:00Z"
+        type: string
+      eventId:
+        description: EventID は参加したイベントのUUID
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        type: string
+      mailAddress:
+        description: MailAddressは参加するユーザーのメールアドレス(必須)
+        example: hirakouki41@gmail.com
+        type: string
+      profileId:
+        description: ProfileID は参加するユーザーのUUID(あれば)
+        example: b2c3d4e5-f6a7-8901-bcde-f23456789012
+        type: string
+      username:
+        description: Usenameは参加するユーザーの表示名(必須)
+        example: ヒラコウキ
+        type: string
+    type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.PresignRequest:
     description: アップロード用署名付き URL の発行リクエスト。
     properties:
@@ -631,6 +680,42 @@ paths:
       summary: レポート取得
       tags:
       - report
+  /api/v1/events/join:
+    post:
+      consumes:
+      - application/json
+      description: ログイン中のユーザーがイベントへ参加する。
+      parameters:
+      - description: 参加申込
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ValidationErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: イベント参加
+      tags:
+      - event
   /api/v1/me:
     get:
       description: 認証済みユーザー自身のプロフィールを返す(初回アクセス時に自動作成)

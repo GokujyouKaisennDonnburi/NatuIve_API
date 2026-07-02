@@ -122,6 +122,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/events/join": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ログイン中のユーザーがイベントへ参加する。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "event"
+                ],
+                "summary": "イベント参加",
+                "parameters": [
+                    {
+                        "description": "参加申込",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ValidationErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/events/{id}": {
             "get": {
                 "description": "指定されたイベントIDの詳細情報を取得する",
@@ -849,6 +906,69 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "$ref": "#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorBody"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventRequest": {
+            "type": "object",
+            "required": [
+                "eventId",
+                "mailAddress",
+                "username"
+            ],
+            "properties": {
+                "eventId": {
+                    "description": "EventID は参加したいイベントのUUID",
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                },
+                "mailAddress": {
+                    "description": "MailAddressは参加するユーザーのメールアドレス(必須)",
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "yamada@example.com"
+                },
+                "profileId": {
+                    "description": "ProfileID は参加するユーザーのUUID(あれば)",
+                    "type": "string",
+                    "example": "b2c3d4e5-f6a7-8901-bcde-f23456789012"
+                },
+                "username": {
+                    "description": "Usenameは参加するユーザーの表示名(必須)",
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "山田太郎"
+                }
+            }
+        },
+        "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "CreatedAt は参加申込日時",
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
+                },
+                "eventId": {
+                    "description": "EventID は参加したイベントのUUID",
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                },
+                "mailAddress": {
+                    "description": "MailAddressは参加するユーザーのメールアドレス(必須)",
+                    "type": "string",
+                    "example": "hirakouki41@gmail.com"
+                },
+                "profileId": {
+                    "description": "ProfileID は参加するユーザーのUUID(あれば)",
+                    "type": "string",
+                    "example": "b2c3d4e5-f6a7-8901-bcde-f23456789012"
+                },
+                "username": {
+                    "description": "Usenameは参加するユーザーの表示名(必須)",
+                    "type": "string",
+                    "example": "ヒラコウキ"
                 }
             }
         },
