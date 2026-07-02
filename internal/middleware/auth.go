@@ -118,16 +118,38 @@ func authUserFromClaims(claims jwt.MapClaims) (AuthUser, bool) {
 	if sub == "" {
 		return AuthUser{}, false
 	}
-	return AuthUser{
+	user := AuthUser{
 		ID:    sub,
 		Email: stringClaim(claims, "email"),
-	}, true
+	}
+	// Google 由来のプロフィール情報は Supabase JWT の user_metadata に入る。
+	// 初回ログイン時の初期値（表示名・アバター・自己紹介）として取り込む。
+	// 2 回目以降は repository.Upsert が上書きしないため、ユーザー編集が優先される。
+	if meta, ok := claims["user_metadata"].(map[string]any); ok {
+		user.DisplayName = firstNonEmpty(stringClaim(meta, "full_name"), stringClaim(meta, "name"))
+		user.AvatarURL = firstNonEmpty(stringClaim(meta, "avatar_url"), stringClaim(meta, "picture"))
+		if user.Email == "" {
+			user.Email = stringClaim(meta, "email")
+		}
+		user.Description = stringClaim(meta, "description")
+	}
+	return user, true
 }
 
 // stringClaim は map から文字列の値を安全に取り出す(無ければ空文字)。
 func stringClaim(m map[string]any, key string) string {
 	s, _ := m[key].(string)
 	return s
+}
+
+// firstNonEmpty は最初の空でない文字列を返す。すべて空なら空文字を返す。
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // abortUnauthorized は統一フォーマットで 401 を返して処理を中断する。

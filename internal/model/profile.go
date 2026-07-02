@@ -55,10 +55,16 @@ type ProfileSummary struct {
 	AvatarURL string `json:"avatarUrl" example:"https://example.com/avatar.png"`
 }
 
-// UpdateProfileRequest はプロフィール更新の入力 DTO。
+// UpdateProfileRequest はプロフィール更新の入力 DTO（部分更新）。
+//
+// 各フィールドはポインタで、nil は「未指定（変更しない）」、非 nil は「その値に設定」を表す。
+// これにより description を空文字にリセットできる（未指定との区別がつく）。
+// 値の検証（必須・文字数上限）は service 層で行う。
 type UpdateProfileRequest struct {
-	DisplayName string `json:"display_name" example:"なちゅいべ太郎" validate:"omitempty,max=255"`
-	Description string `json:"description" example:"イベントを楽しむのが好きです。" validate:"omitempty,max=255"`
+	// DisplayName は表示名。指定時は空不可・255文字以内（service で検証）。
+	DisplayName *string `json:"display_name" example:"なちゅいべ太郎"`
+	// Description は自己紹介。指定時は255文字以内（空文字でリセット可）。
+	Description *string `json:"description" example:"イベントを楽しむのが好きです。"`
 }
 
 // NewProfileResponse は Profile から ProfileResponse を組み立てる。
