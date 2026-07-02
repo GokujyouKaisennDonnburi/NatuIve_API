@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/model"
@@ -11,8 +12,10 @@ import (
 // stubProfileRepository は ProfileRepository のテスト用スタブ。
 type stubProfileRepository struct {
 	upsertCalled bool
+	updateCalled bool
 	gotProfile   *model.Profile
 	upsertErr    error
+	updateErr    error
 
 	getProfile *model.Profile
 	getErr     error
@@ -29,6 +32,12 @@ func (s *stubProfileRepository) Upsert(_ context.Context, p *model.Profile) erro
 	s.upsertCalled = true
 	s.gotProfile = p
 	return s.upsertErr
+}
+
+func (s *stubProfileRepository) Update(_ context.Context, p *model.Profile) error {
+	s.updateCalled = true
+	s.gotProfile = p
+	return s.updateErr
 }
 
 func TestProfileServiceGetOrCreate(t *testing.T) {
@@ -76,52 +85,77 @@ func TestProfileServiceGetOrCreate(t *testing.T) {
 	}
 }
 
+func strptr(s string) *string { return &s }
+
 func TestProfileServiceUpdateMyProfile(t *testing.T) {
-	base := &model.Profile{
-		ID:          "user-1",
-		Email:       "user@example.com",
-		DisplayName: "old name",
-		Description: "old desc",
-	}
+	longName := strings.Repeat("あ", 256)
 
 	tests := []struct {
-		name      string
-		req       model.UpdateProfileRequest
-		getErr    error
-		upsertErr error
-		wantErr   bool
+		name            string
+		req             model.UpdateProfileRequest
+		getErr          error
+		updateErr       error
+		wantErr         bool
+		wantValErr      bool
+		wantDisplayName string
+		wantDescription string
 	}{
 		{
-			name: "正常: 全項目更新",
-			req: model.UpdateProfileRequest{
-				DisplayName: "new name",
-				Description: "new desc",
-			},
+			name:            "正常: 全項目更新",
+			req:             model.UpdateProfileRequest{DisplayName: strptr("new name"), Description: strptr("new desc")},
+			wantDisplayName: "new name",
+			wantDescription: "new desc",
 		},
 		{
-			name: "正常: 部分更新",
-			req: model.UpdateProfileRequest{
-				DisplayName: "new name",
-			},
+			name:            "正常: 部分更新(descriptionは未指定なので保持)",
+			req:             model.UpdateProfileRequest{DisplayName: strptr("new name")},
+			wantDisplayName: "new name",
+			wantDescription: "old desc",
+		},
+		{
+			name:            "正常: 自己紹介を空にリセット",
+			req:             model.UpdateProfileRequest{Description: strptr("")},
+			wantDisplayName: "old name",
+			wantDescription: "",
+		},
+		{
+			name:       "異常: 表示名を空文字",
+			req:        model.UpdateProfileRequest{DisplayName: strptr("  ")},
+			wantErr:    true,
+			wantValErr: true,
+		},
+		{
+			name:       "異常: 表示名が255文字超",
+			req:        model.UpdateProfileRequest{DisplayName: strptr(longName)},
+			wantErr:    true,
+			wantValErr: true,
 		},
 		{
 			name:    "異常: GetByIDエラー",
+			req:     model.UpdateProfileRequest{DisplayName: strptr("new name")},
 			getErr:  errors.New("db error"),
 			wantErr: true,
 		},
 		{
-			name:      "異常: Upsertエラー",
-			upsertErr: errors.New("db error"),
+			name:      "異常: Updateエラー",
+			req:       model.UpdateProfileRequest{DisplayName: strptr("new name")},
+			updateErr: errors.New("db error"),
 			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// base はサブテストごとに新規生成（GetByID が同一ポインタを返し変更が波及するのを防ぐ）。
 			repo := &stubProfileRepository{
-				getProfile: base,
-				getErr:     tt.getErr,
-				upsertErr:  tt.upsertErr,
+				getProfile: &model.Profile{
+					ID:          "user-1",
+					Email:       "user@example.com",
+					DisplayName: "old name",
+					Description: "old desc",
+				},
+				getErr:    tt.getErr,
+				updateErr: tt.updateErr,
 			}
 
 			svc := NewProfileService(repo)
@@ -135,27 +169,26 @@ func TestProfileServiceUpdateMyProfile(t *testing.T) {
 				if got != nil {
 					t.Fatalf("エラー時は結果は nil の想定です")
 				}
+				if tt.wantValErr {
+					_ = assertValidationError(t, err)
+				}
 				return
 			}
 
 			if err != nil {
 				t.Fatalf("予期しないエラーが発生しました: %v", err)
 			}
-
-			if !repo.upsertCalled {
-				t.Fatalf("Upsert が呼び出されていません")
+			if !repo.updateCalled {
+				t.Fatalf("Update が呼び出されていません")
 			}
-
 			if got == nil {
 				t.Fatalf("結果が nil でした")
 			}
-
-			// 更新確認
-			if got.DisplayName != tt.req.DisplayName && tt.req.DisplayName != "" {
-				t.Errorf("DisplayName が一致しません")
+			if got.DisplayName != tt.wantDisplayName {
+				t.Errorf("DisplayName = %q, want %q", got.DisplayName, tt.wantDisplayName)
 			}
-			if got.Description != tt.req.Description && tt.req.Description != "" {
-				t.Errorf("Description が一致しません")
+			if got.Description != tt.wantDescription {
+				t.Errorf("Description = %q, want %q", got.Description, tt.wantDescription)
 			}
 		})
 	}
