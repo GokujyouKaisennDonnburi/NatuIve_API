@@ -87,3 +87,39 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, model.NewProfilePublic(profile))
 }
+
+// UpdateMe godoc
+//
+//	@Summary		本人プロフィール更新
+//	@Description	認証済みユーザー自身のプロフィールを更新する
+//	@Tags			user
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body	model.UpdateProfileRequest	true	"更新内容"
+//	@Success		200	{object}	model.ProfileResponse
+//	@Failure		400	{object}	model.ErrorResponse
+//	@Failure		401	{object}	model.UnauthorizedErrorResponse
+//	@Failure		500	{object}	model.InternalErrorResponse
+//	@Router			/api/v1/me [patch]
+func (h *UserHandler) UpdateMe(c *gin.Context) {
+	authUser, ok := middleware.AuthFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, model.NewErrorResponse("unauthorized", "認証が必要です"))
+		return
+	}
+
+	var req model.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, model.NewErrorResponse("bad_request", "リクエストが不正です"))
+		return
+	}
+
+	profile, err := h.svc.UpdateMyProfile(c.Request.Context(), authUser.ID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, model.NewErrorResponse("internal_error", "更新に失敗しました"))
+		return
+	}
+
+	c.JSON(http.StatusOK, model.NewProfileResponse(profile))
+}

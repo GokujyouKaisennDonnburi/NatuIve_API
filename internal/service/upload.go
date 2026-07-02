@@ -26,9 +26,11 @@ type ObjectStore interface {
 	// Get はオブジェクトの全バイトを返す。maxBytes を超えるオブジェクトはエラー。
 	Get(ctx context.Context, key string, maxBytes int64) ([]byte, error)
 	// Put は body を指定キーで PUT する。
-	Put(ctx context.Context, key string, body []byte, contentType string) error
+	// contentDisposition が空でなければ Content-Disposition として保存する。
+	Put(ctx context.Context, key string, body []byte, contentType, contentDisposition string) error
 	// Copy はバケット内でオブジェクトをコピーする。
-	Copy(ctx context.Context, srcKey, dstKey string) error
+	// contentDisposition が空でなければ、コピー先に contentType と Content-Disposition を付け直す。
+	Copy(ctx context.Context, srcKey, dstKey, contentType, contentDisposition string) error
 	// Delete はオブジェクトを削除する。
 	Delete(ctx context.Context, key string) error
 }

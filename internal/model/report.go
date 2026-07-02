@@ -14,6 +14,10 @@ type CreateReportRequest struct {
 	ImageObjectKeys []string `json:"imageObjectKeys,omitempty" validate:"omitempty,dive"`
 	// PdfObjectKeys はPDFオブジェクトキーの一覧（任意・各要素255文字以内）。
 	PdfObjectKeys []string `json:"pdfObjectKeys,omitempty" validate:"omitempty,dive,max=255"`
+	// ImageFilenames は画像の元ファイル名一覧（任意）。指定時は ImageObjectKeys と同数・同順。
+	ImageFilenames []string `json:"imageFilenames,omitempty" validate:"omitempty,dive,max=255"`
+	// PdfFilenames はPDFの元ファイル名一覧（任意）。指定時は PdfObjectKeys と同数・同順。
+	PdfFilenames []string `json:"pdfFilenames,omitempty" validate:"omitempty,dive,max=255"`
 	// ExternalUrls は外部レポートの参照URL一覧（任意・各要素2048文字以内・http/https のみ）。
 	ExternalUrls []string `json:"externalUrls,omitempty" validate:"omitempty,dive"`
 }
@@ -27,7 +31,11 @@ type NewReport struct {
 	Content         string
 	ImageObjectKeys []string
 	PdfObjectKeys   []string
-	ExternalUrls    []string
+	// ImageFilenames は ImageObjectKeys と同順の元ファイル名（未指定は空文字）。
+	ImageFilenames []string
+	// PdfFilenames は PdfObjectKeys と同順の元ファイル名（未指定は空文字）。
+	PdfFilenames []string
+	ExternalUrls []string
 }
 
 // CreateReportResponse はレポート投稿エンドポイントのレスポンス DTO。
@@ -52,6 +60,10 @@ type ReportResponse struct {
 	ImageObjectKeys []string `json:"imageObjectKeys"`
 	// PdfObjectKeys は PDF オブジェクトキーの一覧。
 	PdfObjectKeys []string `json:"pdfObjectKeys"`
+	// ImageFilenames は ImageObjectKeys に対応する元ファイル名（未設定は空文字）。
+	ImageFilenames []string `json:"imageFilenames"`
+	// PdfFilenames は PdfObjectKeys に対応する元ファイル名（未設定は空文字）。
+	PdfFilenames []string `json:"pdfFilenames"`
 	// ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
 	// 公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
 	ImageUrls []string `json:"imageUrls"`

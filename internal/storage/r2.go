@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // R2Client は Cloudflare R2 の S3 互換 API クライアント。
@@ -110,13 +111,20 @@ func (r *R2Client) Get(ctx context.Context, key string, maxBytes int64) ([]byte,
 }
 
 // Put は body を指定キー・Content-Type で PUT する。
-func (r *R2Client) Put(ctx context.Context, key string, body []byte, contentType string) error {
-	_, err := r.client.PutObject(ctx, &s3.PutObjectInput{
+//
+// contentDisposition が空でなければ Content-Disposition ヘッダとして保存する
+// （ダウンロード時のファイル名指定に使う）。
+func (r *R2Client) Put(ctx context.Context, key string, body []byte, contentType, contentDisposition string) error {
+	in := &s3.PutObjectInput{
 		Bucket:      aws.String(r.bucket),
 		Key:         aws.String(key),
 		Body:        bytes.NewReader(body),
 		ContentType: aws.String(contentType),
-	})
+	}
+	if contentDisposition != "" {
+		in.ContentDisposition = aws.String(contentDisposition)
+	}
+	_, err := r.client.PutObject(ctx, in)
 	if err != nil {
 		return fmt.Errorf("put object %q: %w", key, err)
 	}
@@ -124,13 +132,24 @@ func (r *R2Client) Put(ctx context.Context, key string, body []byte, contentType
 }
 
 // Copy は R2 バケット内でオブジェクトをコピーする。
-func (r *R2Client) Copy(ctx context.Context, srcKey, dstKey string) error {
+//
+// contentDisposition が空でなければ、コピー先に Content-Type と Content-Disposition を
+// 付け直す（MetadataDirective=REPLACE）。REPLACE 時はメタデータが総入れ替えになるため、
+// 元の Content-Type を失わないよう contentType も併せて再指定する。
+// contentDisposition が空なら元オブジェクトのメタデータをそのまま引き継ぐ（COPY）。
+func (r *R2Client) Copy(ctx context.Context, srcKey, dstKey, contentType, contentDisposition string) error {
 	copySource := fmt.Sprintf("%s/%s", r.bucket, srcKey)
-	_, err := r.client.CopyObject(ctx, &s3.CopyObjectInput{
+	in := &s3.CopyObjectInput{
 		Bucket:     aws.String(r.bucket),
 		CopySource: aws.String(copySource),
 		Key:        aws.String(dstKey),
-	})
+	}
+	if contentDisposition != "" {
+		in.MetadataDirective = types.MetadataDirectiveReplace
+		in.ContentType = aws.String(contentType)
+		in.ContentDisposition = aws.String(contentDisposition)
+	}
+	_, err := r.client.CopyObject(ctx, in)
 	if err != nil {
 		return fmt.Errorf("copy object %q -> %q: %w", srcKey, dstKey, err)
 	}

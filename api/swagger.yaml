@@ -27,6 +27,13 @@ definitions:
         example: https://example.com/event
         maxLength: 255
         type: string
+      imageFilenames:
+        description: |-
+          ImageFilenames は画像の元ファイル名一覧（任意）。指定時は ImageObjectKeys と同数・同順。
+          ダウンロード時のファイル名（Content-Disposition）と UI 表示に使う。
+        items:
+          type: string
+        type: array
       imageObjectKeys:
         description: ImageObjectKeys は画像オブジェクトキーの一覧（任意）。
         items:
@@ -42,6 +49,11 @@ definitions:
         example: 東京都新宿御苑
         maxLength: 255
         type: string
+      pdfFilenames:
+        description: PdfFilenames はPDFの元ファイル名一覧（任意）。指定時は PdfObjectKeys と同数・同順。
+        items:
+          type: string
+        type: array
       pdfObjectKeys:
         description: PdfObjectKeys はPDFオブジェクトキーの一覧（任意・各要素255文字以内）。
         items:
@@ -88,8 +100,18 @@ definitions:
         items:
           type: string
         type: array
+      imageFilenames:
+        description: ImageFilenames は画像の元ファイル名一覧（任意）。指定時は ImageObjectKeys と同数・同順。
+        items:
+          type: string
+        type: array
       imageObjectKeys:
         description: ImageObjectKeys は画像オブジェクトキーの一覧（任意）。
+        items:
+          type: string
+        type: array
+      pdfFilenames:
+        description: PdfFilenames はPDFの元ファイル名一覧（任意）。指定時は PdfObjectKeys と同数・同順。
         items:
           type: string
         type: array
@@ -206,6 +228,11 @@ definitions:
         type: string
       id:
         type: string
+      imageFilenames:
+        description: ImageFilenames は ImageObjectKeys に対応する元ファイル名（未設定は空文字）。
+        items:
+          type: string
+        type: array
       imageObjectKeys:
         items:
           type: string
@@ -223,6 +250,11 @@ definitions:
         type: array
       location:
         type: string
+      pdfFilenames:
+        description: PdfFilenames は PdfObjectKeys に対応する元ファイル名（未設定は空文字）。
+        items:
+          type: string
+        type: array
       pdfObjectKeys:
         items:
           type: string
@@ -486,6 +518,11 @@ definitions:
         description: ID はレポートの一意識別子(UUID)。
         example: b2c3d4e5-f6a7-8901-bcde-f23456789012
         type: string
+      imageFilenames:
+        description: ImageFilenames は ImageObjectKeys に対応する元ファイル名（未設定は空文字）。
+        items:
+          type: string
+        type: array
       imageObjectKeys:
         description: ImageObjectKeys は画像オブジェクトキーの一覧。
         items:
@@ -495,6 +532,11 @@ definitions:
         description: |-
           ImageUrls は ImageObjectKeys に対応する表示用の完全URL。
           公開ベースURL（R2_PUBLIC_BASE_URL）未設定時は空配列。
+        items:
+          type: string
+        type: array
+      pdfFilenames:
+        description: PdfFilenames は PdfObjectKeys に対応する元ファイル名（未設定は空文字）。
         items:
           type: string
         type: array
@@ -530,6 +572,17 @@ definitions:
     properties:
       error:
         $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorBody'
+    type: object
+  github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UpdateProfileRequest:
+    properties:
+      description:
+        example: イベントを楽しむのが好きです。
+        maxLength: 255
+        type: string
+      display_name:
+        example: なちゅいべ太郎
+        maxLength: 255
+        type: string
     type: object
   github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ValidationErrorBody:
     properties:
@@ -737,6 +790,41 @@ paths:
       security:
       - BearerAuth: []
       summary: 本人プロフィール取得
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      description: 認証済みユーザー自身のプロフィールを更新する
+      parameters:
+      - description: 更新内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.UnauthorizedErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 本人プロフィール更新
       tags:
       - user
   /api/v1/profiles/{id}:

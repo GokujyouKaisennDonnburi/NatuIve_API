@@ -33,7 +33,7 @@ CreatedAt time.Time `json:"createdAt" example:"2023-01-01T12:00:00Z"`
 
 // EventMember は event_members テーブルと対応するモデル。
 // Repository層でINSERT・SELECTする際に使用する。
-type NewEvent struct {
+type EventMember struct {
 
 EventID     uuid.UUID
 ProfileID   uuid.UUID

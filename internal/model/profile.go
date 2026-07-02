@@ -55,6 +55,12 @@ type ProfileSummary struct {
 	AvatarURL string `json:"avatarUrl" example:"https://example.com/avatar.png"`
 }
 
+// UpdateProfileRequest はプロフィール更新の入力 DTO。
+type UpdateProfileRequest struct {
+	DisplayName string `json:"display_name" example:"なちゅいべ太郎" validate:"omitempty,max=255"`
+	Description string `json:"description" example:"イベントを楽しむのが好きです。" validate:"omitempty,max=255"`
+}
+
 // NewProfileResponse は Profile から ProfileResponse を組み立てる。
 func NewProfileResponse(p *Profile) ProfileResponse {
 	return ProfileResponse{
