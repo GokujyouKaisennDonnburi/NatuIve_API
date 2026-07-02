@@ -170,7 +170,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "ログイン中のユーザーがイベントへ参加する。",
+                "description": "認証は任意。ログイン時のみ profileId が記録される。\nAuthorization ヘッダなし → 匿名参加（profileId = null）。\nヘッダありでトークンが無効 → 401 で中断。\nヘッダありで有効 → profileId を記録してログイン参加。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1049,7 +1049,7 @@ const docTemplate = `{
             }
         },
         "github_com_GokujyouKaisennDonnburi_NatuEve_API_internal_model.JoinEventRequest": {
-            "description": "イベント参加申込に必要な情報。",
+            "description": "イベント参加申込に必要な情報。認証は任意。",
             "type": "object",
             "required": [
                 "mailAddress",
@@ -1089,7 +1089,7 @@ const docTemplate = `{
                     "example": "yamada@example.com"
                 },
                 "profileId": {
-                    "description": "ProfileID は参加するユーザーのUUID。",
+                    "description": "ProfileID は参加するユーザーのUUID。ログイン時のみ記録され、匿名参加時は null。",
                     "type": "string",
                     "example": "b2c3d4e5-f6a7-8901-bcde-f23456789012"
                 },
