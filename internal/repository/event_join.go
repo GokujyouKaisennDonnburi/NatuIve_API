@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/GokujyouKaisennDonnburi/NatuEve_API/internal/model"
 )
 
@@ -14,18 +16,18 @@ import (
 type EventJoinRepository interface {
 
 	// ExistsEvent はイベントが存在するか確認する。
-	ExistsEvent(ctx context.Context, event_id uuid.UUID) (bool, error)
+	ExistsEvent(ctx context.Context, eventID uuid.UUID) (bool, error)
 
 	// ExistsMember はユーザーが既に参加済みか確認する。
-	ExistsMember(ctx context.Context, event_id, profile_id uuid.UUID) (bool, error)
+	ExistsMember(ctx context.Context, eventID, profileID uuid.UUID) (bool, error)
 
 	// CountMembers は現在の参加人数を取得する。
-	CountMembers(ctx context.Context, event_id uuid.UUID) (int, error)
+	CountMembers(ctx context.Context, eventID uuid.UUID) (int, error)
 
-	// GetCapacity はイベントの定員を取得する。
-	GetCapacity(ctx context.Context, event_id uuid.UUID) (int, error)
+	// GetCapacity はイベントの定員を取得する。NULL（定員なし）の場合は 0 を返す。
+	GetCapacity(ctx context.Context, eventID uuid.UUID) (int, error)
 
-	// Join はイベント参加を登録する。
+	// Join はイベント参加を登録する。成功時は member.CreatedAt を埋める。
 	Join(ctx context.Context, member *model.EventMember) error
 }
 
@@ -41,10 +43,10 @@ func NewEventJoinRepository(db *sql.DB) EventJoinRepository {
 	}
 }
 
-// イベント存在確認
+// ExistsEvent はイベントが存在するか確認する。
 func (r *eventJoinPostgres) ExistsEvent(
 	ctx context.Context,
-	event_id uuid.UUID,
+	eventID uuid.UUID,
 ) (bool, error) {
 
 	const query = `
@@ -60,7 +62,7 @@ func (r *eventJoinPostgres) ExistsEvent(
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		event_id,
+		eventID,
 	).Scan(&exists)
 
 	if err != nil {
@@ -70,11 +72,11 @@ func (r *eventJoinPostgres) ExistsEvent(
 	return exists, nil
 }
 
-// 参加済み確認
+// ExistsMember はユーザーが既に参加済みか確認する。
 func (r *eventJoinPostgres) ExistsMember(
 	ctx context.Context,
-	event_id uuid.UUID,
-	profile_id uuid.UUID,
+	eventID uuid.UUID,
+	profileID uuid.UUID,
 ) (bool, error) {
 
 	const query = `
@@ -91,8 +93,8 @@ func (r *eventJoinPostgres) ExistsMember(
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		event_id,
-		profile_id,
+		eventID,
+		profileID,
 	).Scan(&exists)
 
 	if err != nil {
@@ -102,10 +104,10 @@ func (r *eventJoinPostgres) ExistsMember(
 	return exists, nil
 }
 
-// 現在参加人数取得
+// CountMembers は現在の参加人数を取得する。
 func (r *eventJoinPostgres) CountMembers(
 	ctx context.Context,
-	event_id uuid.UUID,
+	eventID uuid.UUID,
 ) (int, error) {
 
 	const query = `
@@ -119,7 +121,7 @@ func (r *eventJoinPostgres) CountMembers(
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		event_id,
+		eventID,
 	).Scan(&count)
 
 	if err != nil {
@@ -129,10 +131,10 @@ func (r *eventJoinPostgres) CountMembers(
 	return count, nil
 }
 
-// 定員取得
+// GetCapacity はイベントの定員を取得する。capacity が NULL（定員なし）の場合は 0 を返す。
 func (r *eventJoinPostgres) GetCapacity(
 	ctx context.Context,
-	event_id uuid.UUID,
+	eventID uuid.UUID,
 ) (int, error) {
 
 	const query = `
@@ -146,14 +148,14 @@ func (r *eventJoinPostgres) GetCapacity(
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		event_id,
+		eventID,
 	).Scan(&capacity)
 
 	if err != nil {
 		return 0, fmt.Errorf("get capacity: %w", err)
 	}
 
-	// NULLなら定員なし
+	// NULL は「定員なし」を表す。0 を返すことで service 層が定員なしと判定できる。
 	if !capacity.Valid {
 		return 0, nil
 	}
@@ -161,7 +163,7 @@ func (r *eventJoinPostgres) GetCapacity(
 	return int(capacity.Int32), nil
 }
 
-// 参加登録
+// Join はイベント参加を登録する。INSERT 後に RETURNING created_at で member.CreatedAt を埋める。
 func (r *eventJoinPostgres) Join(
 	ctx context.Context,
 	member *model.EventMember,
@@ -182,16 +184,17 @@ func (r *eventJoinPostgres) Join(
 		$3,
 		$4
 	)
+	RETURNING created_at
 	`
 
-	_, err := r.db.ExecContext(
+	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		member.event_id,
-		member.profile_id,
-		member.username,
-		member.mail_address,
-	)
+		member.EventID,
+		member.ProfileID,
+		member.Username,
+		member.MailAddress,
+	).Scan(&member.CreatedAt)
 
 	if err != nil {
 		return fmt.Errorf("join event: %w", err)
